@@ -34,7 +34,7 @@ jobs:
         run: |
           rm -rf dist
           mkdir -p dist
-          marp "slides/**/*.md" \
+          marp \
             --html \
             --input-dir slides \
             --output dist \
@@ -43,7 +43,7 @@ jobs:
       - name: Build PDF slides
         run: |
           mkdir -p dist/pdf
-          marp "slides/**/*.md" \
+          marp \
             --pdf \
             --input-dir slides \
             --output dist/pdf \
