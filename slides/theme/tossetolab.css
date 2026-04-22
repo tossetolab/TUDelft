@@ -16,3 +16,31 @@ a { color: #a78bfa; }
 section::after {         /* ページ番号の色など */
   color: #94a3b8;
 }
+
+/* 絶対配置の基準をスライドにする */
+section {
+  position: relative;
+  overflow: hidden; /* 枠からはみ出た分を切る（埋め込み） */
+}
+
+/* 画像枠（任意座標・任意サイズで置ける） */
+.imgbox {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 12px; /* 任意 */
+}
+
+/* 枠いっぱいに表示（必要ならトリミング） */
+.imgbox > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;      /* ＝枠いっぱい（はみ出しはトリミング） */
+  object-position: center;
+  display: block;
+}
+
+/* トリミングせず全体を入れたい場合 */
+.imgbox.contain > img {
+  object-fit: contain;    /* ＝全体表示（余白が出る） */
+  background: #fff;       /* 余白色 */
+}
