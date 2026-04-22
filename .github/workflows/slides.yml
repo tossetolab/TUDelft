@@ -34,15 +34,15 @@ jobs:
         run: |
           rm -rf dist
           mkdir -p dist
-          marp slides \
+          marp --input-dir slides \
             --html \
             --output dist \
             --theme-set slides/theme/tossetolab.css
-
+            
       - name: Build PDF slides
         run: |
           mkdir -p dist/pdf
-          marp slides \
+          marp --input-dir slides \
             --pdf \
             --output dist/pdf \
             --theme-set slides/theme/tossetolab.css
