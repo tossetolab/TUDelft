@@ -7,13 +7,11 @@ paginate: true
 
 # Title
 ## sub-title
-- 
-- 
+- aaa
+- bbb
 
 ## sections
 - 箇条書き
 - 画像や数式もOK
 
-<div class="imgbox" style="top: 120px; left: 80px; width: 560px; height: 320px;">
-  <img src="figs/sample.png" />
-</div>
+![w:560px center](figs/sample.png)
