@@ -8,7 +8,7 @@ section {
 }
 
 h1, h2, h3 {
-  color: hsl(0, 95%, 74%);        /* 見出し */
+  color: rgb(31, 48, 94);        /* 見出し */
 }
 
 a { color: #a78bfa; }
