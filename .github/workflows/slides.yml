@@ -38,6 +38,16 @@ jobs:
             --html \
             --output dist \
             --theme-set slides/theme/tossetolab.css
+
+      - name: Copy static assets (images etc.) into dist
+        run: |
+          # Copy figures and other static files so relative links like "figs/sample.png" work on Pages
+          rsync -av --prune-empty-dirs \
+            --include='*/' \
+            --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' --include='*.svg' --include='*.webp' \
+            --include='*.css' --include='*.js' \
+            --exclude='*' \
+            slides/ dist/
             
       - name: Build PDF slides
         run: |
