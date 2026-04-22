@@ -36,7 +36,6 @@ jobs:
           mkdir -p dist
           marp "slides/**/*.md" \
             --html \
-            --input-dir . \
             --output dist \
             --theme-set slides/theme/tossetolab.css
 
@@ -45,7 +44,6 @@ jobs:
           mkdir -p dist/pdf
           marp "slides/**/*.md" \
             --pdf \
-            --input-dir . \
             --output dist/pdf \
             --theme-set slides/theme/tossetolab.css
 
