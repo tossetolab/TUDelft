@@ -1,0 +1,65 @@
+name: Build & Deploy Slides (Marp)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "slides/**"
+      - ".github/workflows/slides.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Marp CLI
+        run: npm i -g @marp-team/marp-cli
+
+      - name: Build HTML slides
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          marp "slides/**/*.md" \
+            --html \
+            --input-dir . \
+            --output dist \
+            --theme-set slides/theme/tossetolab.css
+
+      - name: Build PDF slides
+        run: |
+          mkdir -p dist/pdf
+          marp "slides/**/*.md" \
+            --pdf \
+            --input-dir . \
+            --output dist/pdf \
+            --theme-set slides/theme/tossetolab.css
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

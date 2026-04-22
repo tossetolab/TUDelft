@@ -1,0 +1,18 @@
+/* @theme tossetolab */
+@import 'default';
+
+section {
+  background: #fbfbfb;   /* 背景 */
+  color: #000000;        /* 文字 */
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1, h2, h3 {
+  color: hsl(0, 95%, 74%);        /* 見出し */
+}
+
+a { color: #a78bfa; }
+
+section::after {         /* ページ番号の色など */
+  color: #94a3b8;
+}
