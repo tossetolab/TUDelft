@@ -1,11 +1,12 @@
 /* @theme tossetolab */
 @import 'default';
 
-section {
+section,
+.marpit > section {
   background: #fbfbfb;   /* 背景 */
   color: #000000;        /* 文字 */
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding-bottom: 92px;  /* 下余白を少しだけ増やす */
+  padding: 70px 70px 92px 70px;  /* 下余白を少しだけ増やす */
 }
 
 h1, h2, h3 {
@@ -22,6 +23,14 @@ section::after {         /* ページ番号の色など */
 section {
   position: relative;
   overflow: hidden; /* 枠からはみ出た分を切る（埋め込み） */
+}
+
+/* Markdownで挿入した画像を中央寄せ */
+section img,
+.marpit > section img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* 画像枠（任意座標・任意サイズで置ける） */
