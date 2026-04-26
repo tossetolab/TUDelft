@@ -5,6 +5,7 @@ section {
   background: #fbfbfb;   /* 背景 */
   color: #000000;        /* 文字 */
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding-bottom: 92px;  /* 下余白を少しだけ増やす */
 }
 
 h1, h2, h3 {
