@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - "slides/**"
+      - "publish/**"
       - ".github/workflows/slides.yml"
   workflow_dispatch:
 
@@ -153,6 +154,64 @@ jobs:
           """
 
           (base_dir / "index.html").write_text(index_html, encoding="utf-8")
+          PY
+
+      - name: Publish static files from publish/
+        run: |
+          pip install markdown --quiet
+          python3 - <<'PY'
+          import os
+          import re
+          import shutil
+          from html import escape
+          from pathlib import Path
+          import markdown
+
+          src = Path("publish")
+          dst = Path("dist/publish")
+          dst.mkdir(parents=True, exist_ok=True)
+
+          if not src.exists():
+              print("No publish/ folder found, skipping.")
+              exit(0)
+
+          for item in src.rglob("*"):
+              rel = item.relative_to(src)
+              target = dst / rel
+              if item.is_dir():
+                  target.mkdir(parents=True, exist_ok=True)
+              elif item.suffix.lower() == ".md":
+                  md_text = item.read_text(encoding="utf-8")
+                  # Strip YAML front matter if present
+                  md_body = re.sub(r"^---\n.*?\n---\n", "", md_text, count=1, flags=re.DOTALL)
+                  title_match = re.search(r"^#\s+(.+)", md_body, re.MULTILINE)
+                  title = title_match.group(1) if title_match else rel.stem
+                  body_html = markdown.markdown(md_body, extensions=["tables", "fenced_code", "toc"])
+                  html = f"""<!DOCTYPE html>
+          <html lang="ja">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>{escape(title)}</title>
+            <style>
+              body {{ max-width: 860px; margin: 40px auto; padding: 0 20px;
+                     font-family: Georgia, serif; line-height: 1.7; color: #14213d; }}
+              a {{ color: #14213d; text-decoration-color: #fca311; }}
+              code {{ background: #f0ece3; padding: 2px 5px; border-radius: 3px; font-size: .92em; }}
+              pre code {{ display: block; padding: 12px; overflow-x: auto; }}
+              table {{ border-collapse: collapse; width: 100%; }}
+              th, td {{ border: 1px solid #d9d2c3; padding: 6px 12px; }}
+            </style>
+          </head>
+          <body>
+          {body_html}
+          </body>
+          </html>"""
+                  target.with_suffix(".html").write_text(html, encoding="utf-8")
+              else:
+                  shutil.copy2(item, target)
+
+          print(f"Published {src} -> {dst}")
           PY
 
       - name: Upload artifact
