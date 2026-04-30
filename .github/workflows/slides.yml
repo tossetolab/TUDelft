@@ -33,10 +33,10 @@ jobs:
       - name: Build HTML slides
         run: |
           rm -rf dist
-          mkdir -p dist
+          mkdir -p dist/slides
           marp --input-dir slides \
             --html \
-            --output dist \
+            --output dist/slides \
             --theme-set slides/theme/tossetolab.css
 
       - name: Copy static assets (images etc.) into dist
@@ -47,15 +47,113 @@ jobs:
             --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' --include='*.svg' --include='*.webp' \
             --include='*.css' --include='*.js' \
             --exclude='*' \
-            slides/ dist/
+            slides/ dist/slides/
             
       - name: Build PDF slides
         run: |
-          mkdir -p dist/pdf
+          mkdir -p dist/slides/pdf
           marp --input-dir slides \
             --pdf \
-            --output dist/pdf \
+            --output dist/slides/pdf \
             --theme-set slides/theme/tossetolab.css
+
+      - name: Generate slide index page
+        run: |
+          python3 - <<'PY'
+          from html import escape
+          from pathlib import Path
+
+          base_dir = Path("dist/slides")
+          html_files = sorted(
+              path for path in base_dir.rglob("*.html")
+              if path.name != "index.html"
+          )
+          pdf_dir = base_dir / "pdf"
+
+          def build_items(paths, base):
+              items = []
+              for path in paths:
+                  relative = path.relative_to(base)
+                  href = relative.as_posix()
+                  label = relative.with_suffix("").as_posix()
+                  items.append(
+                      f'<li><a href="{escape(href)}">{escape(label)}</a></li>'
+                  )
+              return "\n".join(items) if items else "<li>No files generated.</li>"
+
+          html_items = build_items(html_files, base_dir)
+          pdf_items = build_items(sorted(pdf_dir.rglob("*.pdf")), base_dir)
+
+          index_html = f"""<!DOCTYPE html>
+          <html lang=\"en\">
+          <head>
+            <meta charset=\"utf-8\" />
+            <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+            <title>TU Delft Slides</title>
+            <style>
+              :root {{
+                color-scheme: light;
+                --bg: #f5f3ec;
+                --fg: #14213d;
+                --muted: #5c677d;
+                --card: #fffdf8;
+                --accent: #fca311;
+                --border: #d9d2c3;
+              }}
+              * {{ box-sizing: border-box; }}
+              body {{
+                margin: 0;
+                font-family: Georgia, "Times New Roman", serif;
+                background: linear-gradient(180deg, #efe8d8 0%, var(--bg) 100%);
+                color: var(--fg);
+              }}
+              main {{
+                max-width: 860px;
+                margin: 0 auto;
+                padding: 48px 20px 64px;
+              }}
+              h1, h2 {{
+                font-weight: 600;
+                letter-spacing: 0.02em;
+              }}
+              p {{ color: var(--muted); }}
+              section {{
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: 0 12px 30px rgba(20, 33, 61, 0.08);
+              }}
+              section + section {{ margin-top: 20px; }}
+              ul {{ padding-left: 20px; margin: 0; }}
+              li + li {{ margin-top: 10px; }}
+              a {{ color: var(--fg); text-decoration-color: var(--accent); }}
+              a:hover {{ color: #000; }}
+            </style>
+          </head>
+          <body>
+            <main>
+              <h1>TU Delft Slides</h1>
+              <p>Published slide decks and exported PDFs.</p>
+              <section>
+                <h2>HTML</h2>
+                <ul>
+                  {html_items}
+                </ul>
+              </section>
+              <section>
+                <h2>PDF</h2>
+                <ul>
+                  {pdf_items}
+                </ul>
+              </section>
+            </main>
+          </body>
+          </html>
+          """
+
+          (base_dir / "index.html").write_text(index_html, encoding="utf-8")
+          PY
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
