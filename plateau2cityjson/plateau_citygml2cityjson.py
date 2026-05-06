@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PLATEAU CityGML → CityJSON 1.1 変換スクリプト
-CityJSON 仕様: https://www.cityjson.org/specs/1.1.3/
+PLATEAU CityGML → CityJSON 1.1 / 2.0 変換スクリプト
+CityJSON 仕様: https://www.cityjson.org/specs/
 
 使い方:
   # 第一段階: 単一ファイル変換
@@ -12,6 +12,15 @@ CityJSON 仕様: https://www.cityjson.org/specs/1.1.3/
   python plateau_citygml2cityjson.py udx/bldg/
   python plateau_citygml2cityjson.py udx/bldg/ -o output_dir/
   python plateau_citygml2cityjson.py udx/bldg/ --merge   # フォルダを1ファイルにまとめる
+
+  # 座標系変換 (--epsg)
+  python plateau_citygml2cityjson.py input.gml --epsg 6677         # 日本平面直角IX系
+  python plateau_citygml2cityjson.py udx/bldg/ --epsg 4326         # WGS84 地理座標
+  python plateau_citygml2cityjson.py udx/bldg/ --merge --epsg 6677 # マージ + 変換
+
+  # CityJSON バージョン指定 (--cityjson-version)
+  python plateau_citygml2cityjson.py input.gml --cityjson-version 2.0   # CityJSON 2.0 出力
+  python plateau_citygml2cityjson.py input.gml --cityjson-version 1.1   # CityJSON 1.1 出力 (デフォルト)
 
 動作:
   - 入力がファイル (.gml) → 単一変換
@@ -60,11 +69,13 @@ CityJSON 仕様: https://www.cityjson.org/specs/1.1.3/
 """
 
 import json
+import re
 import sys
 import time
 import argparse
 from pathlib import Path
 from lxml import etree
+import pyproj
 
 # --------------------------------------------------------------------------- #
 # XML 名前空間
@@ -97,27 +108,97 @@ SURFACE_TYPE_MAP: dict[str, str] = {
 }
 
 # --------------------------------------------------------------------------- #
+# CRS 読み取りと座標変換
+# --------------------------------------------------------------------------- #
+
+def _read_source_epsg(root) -> int:
+    """
+    gml:Envelope の srsName 属性から EPSG コードを読み取る。
+    例: "http://www.opengis.net/def/crs/EPSG/0/6697" → 6697
+        "urn:ogc:def:crs:EPSG::6697"                 → 6697
+    見つからない場合は PLATEAU のデフォルト 6697 を返す。
+    """
+    envelope = root.find(f'.//{{{GML}}}Envelope')
+    if envelope is not None:
+        srs = envelope.get('srsName', '')
+        m = re.search(r'EPSG[:/]+(?:\d+[:/]+)?(\d+)\s*$', srs)
+        if m:
+            return int(m.group(1))
+    return 6697
+
+
+def _build_crs(src_epsg: int, dst_epsg: int | None) -> tuple:
+    """
+    座標変換に必要な情報をまとめて返す。
+
+    Returns:
+        transformer : pyproj.Transformer (変換不要な場合 None)
+        scale       : VertexRegistry 用スケール
+        crs_uri     : metadata.referenceSystem URI
+        src_latlon  : ソース GML が lat 先行軸順かどうか
+    """
+    src_crs = pyproj.CRS.from_epsg(src_epsg)
+
+    # GML 軸順の判定: EPSG:6697 などは latitude が第1軸 (direction='north')
+    src_latlon = (
+        src_crs.is_geographic
+        and src_crs.axis_info[0].direction.lower() == 'north'
+    )
+
+    eff_dst = dst_epsg if dst_epsg else src_epsg
+    dst_crs = pyproj.CRS.from_epsg(eff_dst)
+
+    if dst_epsg and dst_epsg != src_epsg:
+        # always_xy=True: 入出力を (経度/東距, 緯度/北距, 高さ) に統一
+        transformer = pyproj.Transformer.from_crs(
+            src_crs, dst_crs, always_xy=True
+        )
+    else:
+        transformer = None
+
+    # スケール: 投影座標 (m 単位) は 1mm 精度、地理座標は 1e-7° ≈ 11mm
+    scale: list[float] = (
+        [1e-3, 1e-3, 1e-3] if dst_crs.is_projected
+        else [1e-7, 1e-7, 1e-3]
+    )
+    crs_uri = f"https://www.opengis.net/def/crs/EPSG/0/{eff_dst}"
+
+    return transformer, scale, crs_uri, src_latlon
+
+
+# --------------------------------------------------------------------------- #
 # 座標処理
 # --------------------------------------------------------------------------- #
 
-def parse_pos_list(text: str) -> list[tuple[float, float, float]]:
+def parse_pos_list(
+    text: str,
+    src_latlon: bool = True,
+) -> list[tuple[float, float, float]]:
     """
-    gml:posList テキスト → [(lon, lat, z), ...] のリスト。
-    EPSG:6697 の GML 軸順は (latitude, longitude, height) のため lon/lat を入れ替える。
+    gml:posList テキスト → [(lon_or_x, lat_or_y, z), ...] のリスト。
+
+    src_latlon=True (デフォルト): EPSG:6697 等の lat 先行軸順を lon/lat に入れ替える。
+    変換 (pyproj) はこの後 VertexRegistry.add() で行う。
     """
     nums = list(map(float, text.split()))
     coords: list[tuple[float, float, float]] = []
     for i in range(0, len(nums) - 2, 3):
-        lat, lon, z = nums[i], nums[i + 1], nums[i + 2]
+        if src_latlon:
+            lat, lon, z = nums[i], nums[i + 1], nums[i + 2]
+        else:
+            lon, lat, z = nums[i], nums[i + 1], nums[i + 2]
         coords.append((lon, lat, z))
     return coords
 
 
-def extract_ring_coords(ring_elem) -> list[tuple[float, float, float]]:
+def extract_ring_coords(
+    ring_elem,
+    src_latlon: bool = True,
+) -> list[tuple[float, float, float]]:
     """gml:LinearRing 要素から座標を抽出"""
     pl = ring_elem.find(f'{{{GML}}}posList')
     if pl is not None and pl.text:
-        return parse_pos_list(pl.text)
+        return parse_pos_list(pl.text, src_latlon)
     # gml:pos のフォールバック (稀なケース)
     pos_list = ring_elem.findall(f'{{{GML}}}pos')
     if pos_list:
@@ -125,34 +206,41 @@ def extract_ring_coords(ring_elem) -> list[tuple[float, float, float]]:
         for p in pos_list:
             if p.text:
                 nums.extend(map(float, p.text.split()))
-        coords = []
-        for i in range(0, len(nums) - 2, 3):
-            lat, lon, z = nums[i], nums[i + 1], nums[i + 2]
-            coords.append((lon, lat, z))
-        return coords
+        return parse_pos_list(' '.join(map(str, nums)), src_latlon)
     return []
 
 
 # --------------------------------------------------------------------------- #
-# 頂点レジストリ (重複排除 + 整数量子化)
+# 頂点レジストリ (重複排除 + 整数量子化 + CRS変換)
 # --------------------------------------------------------------------------- #
 
 class VertexRegistry:
     """
     頂点を整数インデックスで管理する。
-    CityJSON の transform により: real = integer * scale + translate
-    精度: 水平 1e-7° ≈ 11mm、高さ 1e-3m = 1mm
-    """
-    SCALE: list[float] = [1e-7, 1e-7, 1e-3]
+    CityJSON の transform: real = integer * scale + translate
 
-    def __init__(self, translate: list[float]):
+    transformer が設定されている場合、add() 内で pyproj 変換を適用する。
+    入力座標は常に (lon/x, lat/y, z) 順 (always_xy=True 準拠)。
+    """
+
+    def __init__(
+        self,
+        translate: list[float],
+        scale: list[float],
+        transformer: pyproj.Transformer | None = None,
+    ):
         self.translate = translate
+        self.scale = scale
+        self.transformer = transformer
         self._map: dict[tuple[int, int, int], int] = {}
         self._list: list[list[int]] = []
 
     def add(self, lon: float, lat: float, z: float) -> int:
+        # CRS 変換 (指定時のみ)
+        if self.transformer:
+            lon, lat, z = self.transformer.transform(lon, lat, z)
         tx, ty, tz = self.translate
-        sx, sy, sz = self.SCALE
+        sx, sy, sz = self.scale
         ix = round((lon - tx) / sx)
         iy = round((lat - ty) / sy)
         iz = round((z   - tz) / sz)
@@ -181,17 +269,18 @@ class VertexRegistry:
 def polygon_to_rings(
     poly_elem,
     reg: VertexRegistry,
+    src_latlon: bool = True,
 ) -> list[list[int]] | None:
     """gml:Polygon → [[exterior_indices], [interior_indices?], ...] または None"""
     ext_ring = poly_elem.find(f'{{{GML}}}exterior/{{{GML}}}LinearRing')
     if ext_ring is None:
         return None
-    coords = extract_ring_coords(ext_ring)
+    coords = extract_ring_coords(ext_ring, src_latlon)
     if not coords:
         return None
     rings = [reg.ring_indices(coords)]
     for intr_ring in poly_elem.findall(f'{{{GML}}}interior/{{{GML}}}LinearRing'):
-        ic = extract_ring_coords(intr_ring)
+        ic = extract_ring_coords(intr_ring, src_latlon)
         if ic:
             rings.append(reg.ring_indices(ic))
     return rings
@@ -200,39 +289,40 @@ def polygon_to_rings(
 def _polygons_from_subtree(
     elem,
     reg: VertexRegistry,
+    src_latlon: bool = True,
 ) -> list[list[list[int]]]:
     """要素の子孫にある全 gml:Polygon をサーフェスリストとして収集"""
     surfaces = []
     for poly in elem.iter(f'{{{GML}}}Polygon'):
-        rings = polygon_to_rings(poly, reg)
+        rings = polygon_to_rings(poly, reg, src_latlon)
         if rings:
             surfaces.append(rings)
     return surfaces
 
 
-def extract_lod0(bldg_elem, reg: VertexRegistry) -> dict | None:
+def extract_lod0(bldg_elem, reg: VertexRegistry, src_latlon: bool = True) -> dict | None:
     """bldg:lod0RoofEdge → CityJSON MultiSurface (LOD 0)"""
     lod0 = bldg_elem.find(f'{{{BLDG}}}lod0RoofEdge')
     if lod0 is None:
         return None
-    surfaces = _polygons_from_subtree(lod0, reg)
+    surfaces = _polygons_from_subtree(lod0, reg, src_latlon)
     if not surfaces:
         return None
     return {"type": "MultiSurface", "lod": "0", "boundaries": surfaces}
 
 
-def extract_lod1(bldg_elem, reg: VertexRegistry) -> dict | None:
+def extract_lod1(bldg_elem, reg: VertexRegistry, src_latlon: bool = True) -> dict | None:
     """bldg:lod1Solid → CityJSON Solid (LOD 1)"""
     lod1 = bldg_elem.find(f'{{{BLDG}}}lod1Solid')
     if lod1 is None:
         return None
-    shell = _polygons_from_subtree(lod1, reg)
+    shell = _polygons_from_subtree(lod1, reg, src_latlon)
     if not shell:
         return None
     return {"type": "Solid", "lod": "1", "boundaries": [shell]}
 
 
-def extract_lod2(bldg_elem, reg: VertexRegistry) -> dict | None:
+def extract_lod2(bldg_elem, reg: VertexRegistry, src_latlon: bool = True) -> dict | None:
     """
     bldg:boundedBy → CityJSON Solid + semantics (LOD 2)。
 
@@ -247,7 +337,7 @@ def extract_lod2(bldg_elem, reg: VertexRegistry) -> dict | None:
         lod2 = bldg_elem.find(f'{{{BLDG}}}lod2Solid')
         if lod2 is None:
             return None
-        shell = _polygons_from_subtree(lod2, reg)
+        shell = _polygons_from_subtree(lod2, reg, src_latlon)
         if not shell:
             return None
         return {"type": "Solid", "lod": "2", "boundaries": [shell]}
@@ -280,7 +370,7 @@ def extract_lod2(bldg_elem, reg: VertexRegistry) -> dict | None:
         sem_surfaces.append({"type": surface_type})
 
         for poly in ms.iter(f'{{{GML}}}Polygon'):
-            rings = polygon_to_rings(poly, reg)
+            rings = polygon_to_rings(poly, reg, src_latlon)
             if rings:
                 shell.append(rings)
                 sem_values.append(sem_idx)
@@ -527,16 +617,23 @@ def extract_attributes(bldg_elem) -> dict:
 # ファイル変換コア
 # --------------------------------------------------------------------------- #
 
-def convert_file(gml_path: Path, verbose: bool = True) -> dict:
+def convert_file(
+    gml_path: Path,
+    target_epsg: int | None = None,
+    cityjson_version: str = "1.1",
+    verbose: bool = True,
+) -> dict:
     """
     単一 GML ファイルを CityJSON 辞書に変換して返す。
 
     Args:
-        gml_path: 入力 GML ファイルパス
-        verbose:  進捗メッセージを表示するか
+        gml_path         : 入力 GML ファイルパス
+        target_epsg      : 出力座標系 EPSG コード (None = GML と同じ CRS を維持)
+        cityjson_version : 出力 CityJSON バージョン ("1.1" または "2.0")
+        verbose          : 進捗メッセージを表示するか
 
     Returns:
-        CityJSON 1.1 準拠の辞書
+        指定バージョンの CityJSON 準拠辞書
     """
     if verbose:
         size_mb = gml_path.stat().st_size / 1024 / 1024
@@ -546,27 +643,36 @@ def convert_file(gml_path: Path, verbose: bool = True) -> dict:
     tree = etree.parse(str(gml_path))
     root = tree.getroot()
 
+    # --- CRS 読み取りと変換準備 ---
+    src_epsg = _read_source_epsg(root)
+    transformer, scale, crs_uri, src_latlon = _build_crs(src_epsg, target_epsg)
+    if verbose:
+        dst_label = f"EPSG:{target_epsg}" if target_epsg else f"EPSG:{src_epsg} (変換なし)"
+        print(f"  CRS: EPSG:{src_epsg} → {dst_label}", flush=True)
+
     # --- Step 1: translate (原点) の決定 ---
     if verbose:
         print("  座標スキャン中...", end=' ', flush=True)
 
-    lons, lats, zs = [], [], []
+    xs, ys, zs = [], [], []
     for pl in root.iter(f'{{{GML}}}posList'):
         if pl.text:
-            for lon, lat, z in parse_pos_list(pl.text):
-                lons.append(lon)
-                lats.append(lat)
-                zs.append(z)
+            for lon, lat, z in parse_pos_list(pl.text, src_latlon):
+                if transformer:
+                    tx, ty, tz = transformer.transform(lon, lat, z)
+                else:
+                    tx, ty, tz = lon, lat, z
+                xs.append(tx); ys.append(ty); zs.append(tz)
 
-    if not lons:
+    if not xs:
         raise ValueError(f"座標データが見つかりません: {gml_path}")
 
-    translate = [min(lons), min(lats), min(zs)]
+    translate = [min(xs), min(ys), min(zs)]
     if verbose:
-        print(f"translate=[{translate[0]:.6f}, {translate[1]:.6f}, {translate[2]:.3f}]",
+        print(f"translate=[{translate[0]:.4f}, {translate[1]:.4f}, {translate[2]:.3f}]",
               flush=True)
 
-    reg = VertexRegistry(translate)
+    reg = VertexRegistry(translate, scale, transformer)
 
     # --- Step 2: 建物変換 ---
     buildings = root.findall(f'.//{{{BLDG}}}Building')
@@ -580,7 +686,7 @@ def convert_file(gml_path: Path, verbose: bool = True) -> dict:
 
         geoms: list[dict] = []
         for fn in (extract_lod0, extract_lod1, extract_lod2):
-            g = fn(bldg, reg)
+            g = fn(bldg, reg, src_latlon)
             if g is not None:
                 geoms.append(g)
 
@@ -595,19 +701,28 @@ def convert_file(gml_path: Path, verbose: bool = True) -> dict:
         print(f"  完了: {len(city_objects)} 棟, {len(reg.vertices):,} 頂点"
               f"  ({elapsed:.1f}s)", flush=True)
 
-    return {
+    # --- CityJSON 出力オブジェクトを組み立て ---
+    cj: dict = {
         "type": "CityJSON",
-        "version": "1.1",
+        "version": cityjson_version,
         "transform": {
-            "scale": VertexRegistry.SCALE,
+            "scale": scale,
             "translate": translate,
         },
         "metadata": {
-            "referenceSystem": "https://www.opengis.net/def/crs/EPSG/0/6697",
+            "referenceSystem": crs_uri,
         },
         "CityObjects": city_objects,
         "vertices": reg.vertices,
     }
+
+    # CityJSON 2.0 固有の追加対応
+    # ・referenceSystem の URI は 1.1 / 2.0 いずれも同じ OGC URL 形式を使用
+    # ・2.0 では GenericCityObject が拡張なしのネイティブ型になるが、
+    #   本スクリプトは Building のみ出力するため差分なし
+    # ・将来的に 2.0 で追加される仕様変更に対応する場合はここに記述する
+
+    return cj
 
 
 def write_cityjson(cj: dict, output_path: Path) -> None:
@@ -632,7 +747,8 @@ def cmd_single(args) -> None:
     print(f"  入力: {input_path}")
     print(f"  出力: {output_path}")
 
-    cj = convert_file(input_path, verbose=True)
+    cj = convert_file(input_path, target_epsg=args.epsg,
+                      cityjson_version=args.cityjson_version, verbose=True)
     write_cityjson(cj, output_path)
     print(f"  書き込み完了: {output_path}  ({output_path.stat().st_size / 1024:.0f} KB)\n")
 
@@ -720,7 +836,8 @@ def cmd_batch(args) -> None:
 
         for i, gml_path in enumerate(gml_files, 1):
             print(f"[{i}/{len(gml_files)}] {gml_path.name}")
-            cj = convert_file(gml_path, verbose=True)
+            cj = convert_file(gml_path, target_epsg=args.epsg,
+                              cityjson_version=args.cityjson_version, verbose=True)
             if merged is None:
                 merged = cj
                 # 既存頂点をマップに登録
@@ -745,7 +862,8 @@ def cmd_batch(args) -> None:
         for i, gml_path in enumerate(gml_files, 1):
             print(f"[{i}/{len(gml_files)}] {gml_path.name}")
             try:
-                cj = convert_file(gml_path, verbose=True)
+                cj = convert_file(gml_path, target_epsg=args.epsg,
+                                  cityjson_version=args.cityjson_version, verbose=True)
                 out = output_dir / gml_path.with_suffix('.city.json').name
                 write_cityjson(cj, out)
                 size_kb = out.stat().st_size / 1024
@@ -784,6 +902,28 @@ def main() -> None:
         '--merge',
         action='store_true',
         help='フォルダ変換時に全ファイルを1つの CityJSON にまとめる',
+    )
+    parser.add_argument(
+        '--epsg',
+        type=int,
+        default=None,
+        metavar='CODE',
+        help=(
+            '出力座標系の EPSG コード。'
+            '例: 6677=日本平面直角IX系, 6676=VIII系, 4326=WGS84地理座標。'
+            '省略時は元 CRS (通常 EPSG:6697) を維持。'
+        ),
+    )
+    parser.add_argument(
+        '--cityjson-version',
+        dest='cityjson_version',
+        choices=['1.1', '2.0'],
+        default='1.1',
+        metavar='VER',
+        help=(
+            '出力 CityJSON バージョン: "1.1" または "2.0" (デフォルト: 1.1)。'
+            'CityJSON 2.0 は https://www.cityjson.org/specs/2.0.0/ 準拠。'
+        ),
     )
 
     args = parser.parse_args()
