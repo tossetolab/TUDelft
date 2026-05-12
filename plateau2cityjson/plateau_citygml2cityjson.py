@@ -26,8 +26,11 @@ CityJSON 仕様: https://www.cityjson.org/specs/
   - 入力がファイル (.gml) → 単一変換
   - 入力がフォルダ       → フォルダ内の全 .gml を変換
 
-属性マッピング (iUR-CityJSON-Building-Mapping v2026-05-04 準拠):
+属性マッピング (iUR-CityJSON-Building-Mapping v2026-05-12):
   attributes.*              : 建物基本属性
+    .gmlID                    : gml:id (CityObject識別子と同値)
+    .meshCode                 : メッシュコード (例: 53394518)
+    .name                     : 施設名称 gml:name (一部建物のみ)
     .buildingID               : 建物ID (uro:BuildingIDAttribute)
     .branchID / .partID       : 枝番・部分番号 (任意)
     .class / .usage           : 建物クラス・用途
@@ -674,6 +677,10 @@ def convert_file(
 
     reg = VertexRegistry(translate, scale, transformer)
 
+    # --- ファイル名から meshCode を抽出 (例: 53394518_bldg_6697_op.gml → "53394518") ---
+    mesh_code_match = re.match(r'^(\d+)', gml_path.stem)
+    mesh_code = mesh_code_match.group(1) if mesh_code_match else None
+
     # --- Step 2: 建物変換 ---
     buildings = root.findall(f'.//{{{BLDG}}}Building')
     if verbose:
@@ -684,6 +691,20 @@ def convert_file(
     for bldg in buildings:
         gml_id = bldg.get(f'{{{GML}}}id') or f'bldg_{len(city_objects)}'
 
+        attrs = extract_attributes(bldg)
+
+        # gml:id を属性として追加
+        attrs['gmlID'] = gml_id
+
+        # meshCode (ファイル名由来) を属性として追加
+        if mesh_code:
+            attrs['meshCode'] = mesh_code
+
+        # gml:name (施設名称など、一部建物のみ存在)
+        name_elem = bldg.find(f'{{{GML}}}name')
+        if name_elem is not None and name_elem.text and name_elem.text.strip():
+            attrs['name'] = name_elem.text.strip()
+
         geoms: list[dict] = []
         for fn in (extract_lod0, extract_lod1, extract_lod2):
             g = fn(bldg, reg, src_latlon)
@@ -692,7 +713,7 @@ def convert_file(
 
         city_objects[gml_id] = {
             "type": "Building",
-            "attributes": extract_attributes(bldg),
+            "attributes": attrs,
             "geometry": geoms,
         }
 
