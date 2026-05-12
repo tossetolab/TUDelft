@@ -1,6 +1,6 @@
 # CityGML (PLATEAU + i-UR ADE) to CityJSON Mapping Table for Buildings
 
-**Version:** 2026-05-04Updated
+**Version:** 2026-05-12Updated
 
 This document defines an official, implementation-oriented mapping table between **CityGML building-related attributes** (including **i-UR ADE**) used in PLATEAU datasets and their corresponding representations in **CityJSON 2.0**.
 
@@ -13,21 +13,22 @@ The mapping is explicitly data-driven: attributes are included only when they ar
 - Mapping is based on **semantic meaning**, not CityGML UML structure.
 - CityJSON `attributes` contain core, frequently queried building properties.
 - CityJSON `properties.iur` contain contextual, regulatory, and urban-planning information.
+- Nested structures are expressed explicitly using arrows (→)
 - All i-UR ADE class hierarchies are **flattened**.
 - Attributes not listed here are intentionally excluded.
 
 ---
 
-## 0. Core CityGML Building Attributes (bldg:Building)  **[ADDED]**
+## 0. Core CityGML Building Attributes (bldg:Building)  
 
 | CityGML attribute | CityJSON target | Notes |
 |-------------------|-----------------|-------|
-| `bldg:class` | `attributes.class` | Widely populated in PLATEAU |
-| `bldg:usage` | `attributes.usage` | Used when i-UR usage missing |
-| `bldg:measuredHeight` | `attributes.measuredHeight` | CityJSON standard |
-| `bldg:storeysAboveGround` | `attributes.storeysAboveGround` | Frequently populated |
-| `bldg:storeysBelowGround` | `attributes.storeysBelowGround` | Frequently populated |
-| `core:creationDate` | `attributes.creationDate` | ISO 8601 string |
+| `bldg:class` | `class` | Widely populated in PLATEAU |
+| `bldg:usage` | `usage` | Used when i-UR usage missing |
+| `bldg:measuredHeight` | `measuredHeight` | CityJSON standard |
+| `bldg:storeysAboveGround` | `storeysAboveGround` | Frequently populated |
+| `bldg:storeysBelowGround` | `storeysBelowGround` | Frequently populated |
+| `core:creationDate` | `creationDate` | ISO 8601 string |
 
 ---
 
@@ -35,11 +36,14 @@ The mapping is explicitly data-driven: attributes are included only when they ar
 
 | CityGML / i-UR attribute | CityJSON target | Notes |
 |-------------------------|----------------|-------|
-| `buildingID` | `attributes.buildingID` | Municipal unique building ID |
-| `branchID` | `attributes.branchID` | Optional |
-| `partID` | `attributes.partID` | Optional |
-| `prefecture` | `metadata.address.prefecture` | Metadata-level |
-| `city` | `metadata.address.city` | Metadata-level |
+| `gml:id` | `gmlID` | gml:ID |
+| `meshCode` | `meshcode` | Regional grid-code |
+| `name` | `name` | Building specific name:ja |
+| `buildingID` | `buildingID` | Municipal unique building ID |
+| `branchID` | `branchID` | Optional |
+| `partID` | `partID` | Optional |
+| `prefecture` | `prefecture` | Metadata-level |
+| `city` | `city` | Metadata-level |
 
 ---
 
@@ -47,21 +51,21 @@ The mapping is explicitly data-driven: attributes are included only when they ar
 
 | CityGML / i-UR attribute | CityJSON target | Notes |
 |-------------------------|----------------|-------|
-| `siteArea` | `attributes.siteArea` | gml:Measure → number |
-| `totalFloorArea` | `attributes.totalFloorArea` | Core analytical attribute |
-| `buildingFootprintArea` | `attributes.footprintArea` | Optional |
-| `developmentArea` | `properties.iur.developmentArea` | Planning context |
-| `buildingStructureType` | `attributes.structureType` | CodeType → string |
-| `fireproofStructureType` | `attributes.fireproofType` | CodeType → string |
-| `majorUsage` | `attributes.usage` | Promoted to core |
-| `orgUsage`, `detailedUsage*` | `properties.iur.detailedUsage[]` | Flattened |
-| `vacancy` | `attributes.vacancy` | Frequently populated |
-| `buildingCoverageRate` | `attributes.coverageRatio` | Ratio |
-| `floorAreaRate` | `attributes.floorAreaRatio` | Ratio |
-| `buildingHeight` | `attributes.measuredHeight` | Harmonized |
-| `eaveHeight` | `properties.iur.eaveHeight` | Optional |
-| `surveyYear` | `attributes.surveyYear` | Provenance |
-| `note` | `properties.iur.note` | Free text |
+| `siteArea` | `siteArea` | gml:Measure → number |
+| `totalFloorArea` | `totalFloorArea` | Core analytical attribute |
+| `buildingFootprintArea` | `footprintArea` | Optional |
+| `developmentArea` | `iur → developmentArea` | Planning context |
+| `buildingStructureType` | `structureType` | CodeType → string |
+| `fireproofStructureType` | `fireproofType` | CodeType → string |
+| `majorUsage` | `usage` | Promoted to core |
+| `orgUsage`, `detailedUsage*` | `iur → detailedUsage[]` | Flattened |
+| `vacancy` | `vacancy` | Frequently populated |
+| `buildingCoverageRate` | `coverageRatio` | Ratio |
+| `floorAreaRate` | `floorAreaRatio` | Ratio |
+| `buildingHeight` | `measuredHeight` | Harmonized |
+| `eaveHeight` | `iur → eaveHeight` | Optional |
+| `surveyYear` | `surveyYear` | Provenance |
+| `note` | `iur → note` | Free text |
 
 ---
 
@@ -69,44 +73,41 @@ The mapping is explicitly data-driven: attributes are included only when they ar
 
 | CityGML / i-UR attribute | CityJSON target | Notes |
 |-------------------------|----------------|-------|
-| `urbanPlanType` | `properties.iur.urbanPlanType` | Contextual |
-| `areaClassificationType` | `properties.iur.areaClassificationType` | Contextual |
-| `districtsAndZonesType` | `properties.iur.districts[]` | Multi-valued |
-| `landUseType` | `properties.iur.landUseType` | Zoning |
+| `urbanPlanType` | `iur → urbanPlanType` | Contextual |
+| `areaClassificationType` | `iur → areaClassificationType` | Contextual |
+| `districtsAndZonesType` | `iur → districts[]` | Multi-valued |
+| `landUseType` | `iur → landUseType` | Zoning |
 
 ---
 
-## 4. Disaster Risk Attributes (uro:BldgDisasterRiskAttribute)  **[EXTENDED]**
+## 4. Disaster Risk Attributes (uro:BldgDisasterRiskAttribute)
 
 ### FloodingRiskAttribute
 
 | CityGML / i-UR attribute | CityJSON target | Notes |
 |-------------------------|----------------|-------|
-| `description` | `properties.iur.risk.flood.description` | Code value |
-| `rank` | `properties.iur.risk.flood.rank` | Ordinal |
-| `depth` | `properties.iur.risk.flood.depth` | meters |
-| `adminType` | `properties.iur.risk.flood.adminType` | Source authority |
-| `scale` | `properties.iur.risk.flood.scale` | Assessment scale |
+| `description` | `iur → risk.flood.description` | Code value |
+| `rank` | `iur → risk.flood.rank` | Ordinal |
+| `depth` | `iur → risk.flood.depth` | meters |
+| `adminType` | `iur → risk.flood.adminType` | Source authority |
+| `scale` | `iur → risk.flood.scale` | Assessment scale |
 
 ### LandSlideRiskAttribute
 
 | CityGML / i-UR attribute | CityJSON target | Notes |
 |-------------------------|----------------|-------|
-| `description` | `properties.iur.risk.landslide.description` | Code value |
-| `areaType` | `properties.iur.risk.landslide.areaType` | Hazard zone type |
+| `description` | `iur → risk.landslide.description` | Code value |
+| `areaType` | `iur → risk.landslide.areaType` | Hazard zone type |
 
 ---
 
-## 5. Geometry Semantics  **[ADDED]**
+## 5. Geometry Semantics
 
-The following CityGML boundary surface types are preserved and converted into
-CityJSON geometry semantics when present:
-
-- `bldg:GroundSurface`
-- `bldg:WallSurface`
-- `bldg:RoofSurface`
-
-These are mapped to `geometry.semantics.surfaces` with corresponding index arrays.
+| CityGML | CityJSON target |
+|--------|----------------|
+| bldg:GroundSurface | geometry → semantics → surfaces → type |
+| bldg:WallSurface | geometry → semantics → surfaces → type |
+| bldg:RoofSurface | geometry → semantics → surfaces → type |
 
 ---
 
@@ -127,3 +128,4 @@ The following CityGML / i-UR elements are intentionally not mapped:
 - This mapping is converter-agnostic and can be implemented independently of PLATEAU-GIS-Converter.
 - Attribute selection is empirically aligned with real PLATEAU CityGML data and 3DBAG-style CityJSON usage.
 - Designed for CityJSON 2.0 and downstream formats such as FlatCityBuf and 3D Tiles.
+- This document was created with the support of **Microsoft 365 Copilot**.
