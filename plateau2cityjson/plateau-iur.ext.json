@@ -1,0 +1,149 @@
+{
+  "type": "CityJSON_Extension",
+  "name": "PLATEAU-iUR",
+  "uri": "./plateau-iur.ext.json",
+  "version": "1.0",
+  "versionCityJSON": "2.0",
+  "description": "CityJSON Extension for PLATEAU (Japan national 3D city model) i-UR 3.2 attributes mapped to Building.attributes. Reference: https://www.geospatial.jp/iur/uro/3.2",
+  "extraRootProperties": {},
+  "extraAttributes": {
+    "Building": {
+      "properties": {
+        "gmlID": {
+          "type": "string",
+          "description": "gml:id"
+        },
+        "meshCode": {
+          "type": "string",
+          "description": "JIS X 0410 地域メッシュコード"
+        },
+        "name": {
+          "type": "string",
+          "description": "施設名称 (gml:name)"
+        },
+        "buildingID": {
+          "type": "string"
+        },
+        "branchID": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "partID": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "prefecture": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "city": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "totalFloorArea": {
+          "type": "number"
+        },
+        "siteArea": {
+          "type": "number"
+        },
+        "footprintArea": {
+          "type": "number"
+        },
+        "structureType": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "fireproofType": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "vacancy": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "coverageRatio": {
+          "type": "number"
+        },
+        "floorAreaRatio": {
+          "type": "number"
+        },
+        "surveyYear": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "urbanPlanType": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "areaClassificationType": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "landUseType": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "districts": {
+          "type": "string",
+          "description": "地域地区コード (| 区切り)"
+        },
+        "detailedUsage": {
+          "type": "string",
+          "description": "詳細用途コード (| 区切り)"
+        },
+        "developmentArea": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "eaveHeight": {
+          "type": "number"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^(flood|landslide|inlandFlood|tsunami|highTide)Risk(_.*)?$": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "災害リスク属性 (単一はフラット展開、複数は JSON 文字列)"
+        },
+        "^gen_": {
+          "type": [
+            "string",
+            "number",
+            "integer"
+          ],
+          "description": "PLATEAU gen:*Attribute"
+        }
+      }
+    }
+  },
+  "extraCityObjects": {}
+}

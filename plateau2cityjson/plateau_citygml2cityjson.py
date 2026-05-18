@@ -26,10 +26,10 @@ CityJSON 仕様: https://www.cityjson.org/specs/
   - 入力がファイル (.gml) → 単一変換
   - 入力がフォルダ       → フォルダ内の全 .gml を変換
 
-属性マッピング (iUR-CityJSON-Building-Mapping v2026-05-12):
+属性マッピング (iUR-CityJSON-Building-Mapping v2026-05-04 準拠):
   attributes.*              : 建物基本属性
     .gmlID                    : gml:id (CityObject識別子と同値)
-    .meshCode                 : メッシュコード (例: 53394518)
+    .meshCode                 : ファイル名由来のメッシュコード (例: 53394518)
     .name                     : 施設名称 gml:name (一部建物のみ)
     .buildingID               : 建物ID (uro:BuildingIDAttribute)
     .branchID / .partID       : 枝番・部分番号 (任意)
@@ -111,8 +111,95 @@ SURFACE_TYPE_MAP: dict[str, str] = {
 }
 
 # --------------------------------------------------------------------------- #
+# CityJSON Extension (PLATEAU i-UR)
+# --------------------------------------------------------------------------- #
+
+_EXT_NAME    = "PLATEAU-iUR"
+_EXT_FILE    = "plateau-iur.ext.json"
+_EXT_VERSION = "1.0"
+
+
+def _plateau_ext_schema() -> dict:
+    """
+    CityJSON 2.0 Extension スキーマ辞書を返す。
+    Building.attributes に追加した PLATEAU / i-UR 固有フィールドを宣言する。
+    仕様: https://www.cityjson.org/specs/2.0.2/#extensions
+    """
+    return {
+        "type": "CityJSON_Extension",
+        "name": _EXT_NAME,
+        "uri": f"./{_EXT_FILE}",
+        "version": _EXT_VERSION,
+        "versionCityJSON": "2.0",
+        "description": (
+            "CityJSON Extension for PLATEAU (Japan national 3D city model) "
+            "i-UR 3.2 attributes mapped to Building.attributes. "
+            "Reference: https://www.geospatial.jp/iur/uro/3.2"
+        ),
+        "extraRootProperties": {},
+        "extraAttributes": {
+            "Building": {
+                "properties": {
+                    # §0 識別子
+                    "gmlID":      {"type": "string",  "description": "gml:id"},
+                    "meshCode":   {"type": "string",  "description": "JIS X 0410 地域メッシュコード"},
+                    "name":       {"type": "string",  "description": "施設名称 (gml:name)"},
+                    # §1 BuildingIDAttribute
+                    "buildingID": {"type": "string"},
+                    "branchID":   {"type": ["string", "integer"]},
+                    "partID":     {"type": ["string", "integer"]},
+                    "prefecture": {"type": ["string", "integer"]},
+                    "city":       {"type": ["string", "integer"]},
+                    # §2 BuildingDetailAttribute
+                    "totalFloorArea":         {"type": "number"},
+                    "siteArea":               {"type": "number"},
+                    "footprintArea":          {"type": "number"},
+                    "structureType":          {"type": ["string", "integer"]},
+                    "fireproofType":          {"type": ["string", "integer"]},
+                    "vacancy":                {"type": ["string", "number"]},
+                    "coverageRatio":          {"type": "number"},
+                    "floorAreaRatio":         {"type": "number"},
+                    "surveyYear":             {"type": ["string", "integer"]},
+                    # §3 都市計画・ゾーニング
+                    "urbanPlanType":          {"type": ["string", "integer"]},
+                    "areaClassificationType": {"type": ["string", "integer"]},
+                    "landUseType":            {"type": ["string", "integer"]},
+                    "districts":              {"type": "string", "description": "地域地区コード (| 区切り)"},
+                    "detailedUsage":          {"type": "string", "description": "詳細用途コード (| 区切り)"},
+                    "developmentArea":        {"type": ["string", "number"]},
+                    "eaveHeight":             {"type": "number"},
+                    "note":                   {"type": "string"},
+                },
+                # §4 災害リスク (floodRisk_rank, floodRisk_depth, …) + gen:*Attribute
+                "patternProperties": {
+                    "^(flood|landslide|inlandFlood|tsunami|highTide)Risk(_.*)?$": {
+                        "type": ["string", "number"],
+                        "description": "災害リスク属性 (単一はフラット展開、複数は JSON 文字列)"
+                    },
+                    "^gen_": {
+                        "type": ["string", "number", "integer"],
+                        "description": "PLATEAU gen:*Attribute"
+                    }
+                }
+            }
+        },
+        "extraCityObjects": {}
+    }
+
+
+# --------------------------------------------------------------------------- #
 # CRS 読み取りと座標変換
 # --------------------------------------------------------------------------- #
+
+def _detect_uro_ns(root) -> str:
+    """
+    GML ルート要素の nsmap から uro 名前空間 URI を検出する。
+    PLATEAU データは i-UR のマイナーバージョン (3.1 / 3.2 / …) を都度変えるため、
+    ハードコードせずファイルから読み取る。
+    見つからない場合は 3.2 (スクリプトの想定デフォルト) を返す。
+    """
+    return root.nsmap.get('uro', 'https://www.geospatial.jp/iur/uro/3.2')
+
 
 def _read_source_epsg(root) -> int:
     """
@@ -646,6 +733,9 @@ def convert_file(
     tree = etree.parse(str(gml_path))
     root = tree.getroot()
 
+    # --- i-UR uro 名前空間をファイルから動的検出 (3.1 / 3.2 / … に対応) ---
+    NS['uro'] = _detect_uro_ns(root)
+
     # --- CRS 読み取りと変換準備 ---
     src_epsg = _read_source_epsg(root)
     transformer, scale, crs_uri, src_latlon = _build_crs(src_epsg, target_epsg)
@@ -746,11 +836,47 @@ def convert_file(
     return cj
 
 
-def write_cityjson(cj: dict, output_path: Path) -> None:
-    """CityJSON 辞書をファイルに書き込む (compact JSON)"""
+def write_cityjson(
+    cj: dict,
+    output_path: Path,
+    *,
+    use_extension: bool = True,
+    indent: int | None = 2,
+) -> None:
+    """
+    CityJSON 辞書をファイルに書き込む。
+
+    use_extension=True のとき、同じフォルダに plateau-iur.ext.json を生成し、
+    CityJSON オブジェクトに "extensions" メンバーを追加する。
+    indent=None のとき compact (1行) 出力。
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    out = cj
+    if use_extension:
+        # Extension スキーマを隣に書き出す
+        ext_path = output_path.parent / _EXT_FILE
+        with open(ext_path, 'w', encoding='utf-8') as f:
+            json.dump(_plateau_ext_schema(), f, ensure_ascii=False, indent=2)
+
+        # CityJSON キー順 (type → version → extensions → …) を保ちつつ挿入
+        out = {
+            "type":    cj["type"],
+            "version": cj["version"],
+            "extensions": {
+                _EXT_NAME: {
+                    "url":     f"./{_EXT_FILE}",
+                    "version": _EXT_VERSION,
+                }
+            },
+            **{k: v for k, v in cj.items() if k not in ("type", "version")},
+        }
+
     with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(cj, f, ensure_ascii=False, separators=(',', ':'))
+        if indent is None:
+            json.dump(out, f, ensure_ascii=False, separators=(',', ':'))
+        else:
+            json.dump(out, f, ensure_ascii=False, indent=indent)
 
 
 # --------------------------------------------------------------------------- #
@@ -770,7 +896,9 @@ def cmd_single(args) -> None:
 
     cj = convert_file(input_path, target_epsg=args.epsg,
                       cityjson_version=args.cityjson_version, verbose=True)
-    write_cityjson(cj, output_path)
+    write_cityjson(cj, output_path,
+                   use_extension=not args.no_extension,
+                   indent=None if args.compact else 2)
     print(f"  書き込み完了: {output_path}  ({output_path.stat().st_size / 1024:.0f} KB)\n")
 
 
@@ -868,7 +996,9 @@ def cmd_batch(args) -> None:
                 _merge_cityjson(merged, cj)
 
         if merged:
-            write_cityjson(merged, output_path)
+            write_cityjson(merged, output_path,
+                           use_extension=not args.no_extension,
+                           indent=None if args.compact else 2)
             size_mb = output_path.stat().st_size / 1024 / 1024
             print(f"\n  マージ完了: {len(merged['CityObjects'])} 棟"
                   f", {len(merged['vertices']):,} 頂点"
@@ -886,7 +1016,9 @@ def cmd_batch(args) -> None:
                 cj = convert_file(gml_path, target_epsg=args.epsg,
                                   cityjson_version=args.cityjson_version, verbose=True)
                 out = output_dir / gml_path.with_suffix('.city.json').name
-                write_cityjson(cj, out)
+                write_cityjson(cj, out,
+                               use_extension=not args.no_extension,
+                               indent=None if args.compact else 2)
                 size_kb = out.stat().st_size / 1024
                 print(f"  → {out.name}  ({size_kb:.0f} KB)\n")
                 ok += 1
@@ -943,7 +1075,22 @@ def main() -> None:
         metavar='VER',
         help=(
             '出力 CityJSON バージョン: "1.1" または "2.0" (デフォルト: 1.1)。'
-            'CityJSON 2.0 は https://www.cityjson.org/specs/2.0.0/ 準拠。'
+            'CityJSON 2.0 は https://www.cityjson.org/specs/2.0.2/ 準拠。'
+        ),
+    )
+    parser.add_argument(
+        '--compact',
+        action='store_true',
+        help='出力 JSON を1行にまとめる (デフォルト: インデント2でフォーマット出力)。',
+    )
+    parser.add_argument(
+        '--no-extension',
+        dest='no_extension',
+        action='store_true',
+        help=(
+            'CityJSON Extension スキーマ (plateau-iur.ext.json) を生成しない。'
+            'デフォルトでは出力フォルダに .ext.json を生成し、'
+            'CityJSON ファイルに "extensions" メンバーを追加する。'
         ),
     )
 
