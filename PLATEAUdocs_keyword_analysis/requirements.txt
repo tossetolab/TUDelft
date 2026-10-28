@@ -1,0 +1,7 @@
+# PLATEAUdocs_keyword_analysis
+# pip install -r requirements.txt
+
+PyMuPDF>=1.23        # Step 1: PDF テキスト抽出（import fitz）
+fugashi>=1.3         # Step 2: MeCab ラッパー（形態素解析）
+unidic-lite>=1.0.8   # Step 2: fugashi 用の辞書
+openpyxl>=3.1        # Step 3: Excel ブック生成
