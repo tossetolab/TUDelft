@@ -1,0 +1,4471 @@
+P LATEAU
+のための空間
+ID 生成ツール
+技術検証レポート
+Technical
+R eport
+for Spatial ID
+Generator
+on PLATEAU
+3D 都市モデル活用のための技術資料
+｜PLATEAU Technical
+Report
+No.55
+はじめに
+ デジタル庁は、
+年度から国土交通省や経済産業省をはじめとする関係省庁と連携して、
+3 D
+都市モデルを含めた
+3次元空間情報等を統合的に流通させる基盤となる「
+3 次元空間情報基盤」の
+検討・構築を行っている。この「
+3次元空間情報基盤」は、人・機械が一意に空間を特定するため
+の
+3 次元グリッド
+（ボクセル）
+識別子である「空間
+I D 」を検索キー（インデックス）として導入
+し、さまざまな空間情報を結合・検索することによって、自律移動ロボット
+をはじめとする様々
+なソリューションの基盤となる
+デジタルツイン
+の社会実装を
+目指している
+。
+ 国土交通省
+では、
+2020 年度から建築物や道路、設備など都市空間を構成する地物をデジタルツイ
+ン上で再現する３
+D都市モデルの整備・活用・オープンデータ化の取組みである
+P roject
+PLATEAU
+（プラトー）
+に取り組んでおり、
+全国の地方公共団体において
+データ
+整備が進められて
+いる。３
+D 都市モデルは、
+「空間
+ID 」の普及・
+発展に
+欠かすことのできない空間情報の一つであ
+る。
+ 2022 年度の本プロジェクト「
+デジタルツイン構築に向けた
+3D 都市モデルの整備に関する調査研
+究」では、
+「3D 都市モデル標準製品仕様書
+第
+2. 3 版」に準拠する
+3 D 都市モデルに対し「空間
+ID 」を自動付与するツール
+と、「空間
+ID 」のメタデータに
+3D 都市モデルの持つ属性情報を自動
+付与するためのツール
+を開発するとともに、その標準化を図るため、標準仕様の
+拡張仕様（案）
+を作成した。
+ 本ドキュメントは、
+上述のツール
+に関する
+技術仕様
+と、開発過程及び成果から得られた「空間
+ID 」活用に関する
+実証結果についてとりまとめたものである。また、
+本作成実証で使用した
+「空
+間ID 付与のための
+3D 都市モデル拡張製品仕様書（案）
+」の解説も示す。
+ Project
+PLATEAU
+の
+3 D 都市モデル
+を「空間
+I D 」へ変換する際には、本ドキュメントで紹介する
+ツールを
+活用し
+、「
+3 次元空間情報基盤」の構築に
+役立てていただきたい
+。
+目次
+1 PLATEAUのための空間
+ID生成ツールの概要
+ ........................................................................ 1
+(1)
+ 開発の目的
+................................
+................................
+................................
+........................
+(2)
+ 開発したツールの全体像
+................................
+................................
+................................
+.. 2
+(3)
+ 「空間
+ID 」の仕様
+................................
+................................
+................................
+............
+2 開発ツールの技術仕様
+ ............................................................................................................ 6
+2.1 アーキテクチャ図
+ .................................................................................................................... 6
+(1)
+ 空間
+ID を付与した
+3D 都市モデル生成ツール
+................................
+................................
+. 6
+(2)
+ 空間
+ID のメタデータ生成ツール
+................................
+................................
+.....................
+2.2 システム機能設計
+ .................................................................................................................... 8
+(1)
+ 空間
+ID を付与した
+3D 都市モデル生成ツール
+................................
+................................
+. 8
+(2)
+ 空間
+ID のメタデータ生成ツール
+................................
+................................
+...................
+2.3 プログラム設計
+ ..................................................................................................................... 19
+(1)
+ 空間
+ID を付与した
+3D 都市モデル生成ツール
+................................
+...............................
+(2)
+ 空間
+ID のメタデータ生成ツール
+................................
+................................
+...................
+3 ツールの利用方法
+ ................................................................................................................. 32
+3.1 空間
+IDを付与した
+3D都市モデル生成ツール
+ ...................................................................... 32
+(1)
+ 環境構築
+................................
+................................
+................................
+..........................
+(2)
+ プログラム使用方法
+................................
+................................
+................................
+.......
+3.2 空間
+IDのメタデータ生成ツール（ビューア部）
+ .................................................................. 38
+(1)
+ 環境構築
+................................
+................................
+................................
+..........................
+(2)
+ ビューアの使用方法
+................................
+................................
+................................
+.......
+4 空間
+ID付与のための
+3D都市モデル拡張製品仕様（案）
+ ...................................................... 40
+4.1 空間
+IDの付与方法
+ ............................................................................................................... 40
+4.2 拡張製品仕様（案）の概要
+ .................................................................................................... 41
+(1)
+ CityGML
+ファイルの拡張仕様
+................................
+................................
+.........................
+(2)
+ 外部ファイル（
+CSV 形式）の仕様
+................................
+................................
+.................
+5 3D都市モデルから生成した空間
+IDの表示例
+ ........................................................................ 46
+(1)
+ 建築物
+................................
+................................
+................................
+.............................
+(2)
+ 都市設備
+................................
+................................
+................................
+..........................
+(3)
+ 土地利用
+................................
+................................
+................................
+..........................
+(4)
+ 植生................................
+................................
+................................
+................................
+. 50
+(5)
+ 地形................................
+................................
+................................
+................................
+. 51
+(6)
+ 土砂災害警戒区域
+................................
+................................
+................................
+...........
+(7)
+ 道路................................
+................................
+................................
+................................
+. 52
+(8)
+ 水部（浸水想定区域）
+................................
+................................
+................................
+....
+(9)
+ 都市計画決定情報
+................................
+................................
+................................
+...........
+1  PLATEAU
+のための空間
+ID 生成ツール
+の概要
+(1)
+ 開発の目的デジタル庁は、国土交通省や経済産業省をはじめとする関係省庁と連携して、自動運転車、ドローン及び自動配送ロボット等による、運行環境をリアルタイムで把握し経路決定を行うなどの高度な運行を可能とするために、
+3 D都市モデル等のデジタルインフラ／デジタルツインの整備を進めている。
+3 D 都市モデルを含めた
+3次元空間情報等を統合的に流通させる基盤として「
+3 次元空間情報基盤」
+の検討・構築が進められており、その中で、実世界の位置情報を統一的な基準によって特定するため
+の
+3 次元グリッド（ボクセル）識別子である
+「空間
+I D 」が定義さ
+れている
+（図
+1 - 1 参照）
+。
+本自動生成ツールは、
+3次元空間情報の重要な要素の一つであり、
+Project
+PLATEAU
+を通じて整備
+が進められている
+「3D 都市モデル標準製品仕様書
+第
+2. 3 版」準拠の
+3 D 都市モデルに対し、「空間
+I D」を自動付与する仕組みを用意することによって、「空間
+ID 」の実現・普及に
+貢献することを目的
+としている
+。
+図
+ 1-1 「
+3次元空間情報基盤」及び「空間
+ID」の概要
+本技術
+検証レポート
+は、
+「空間
+I D を付与した
+3 D 都市モデル生成ツール
+」と「
+空間
+I D のメタデータ
+生成ツール」に
+関する技術仕様、利用方法及び空間
+ID の生成結果を記載する
+。また、
+作成実証で使用
+した
+「空間
+ID 付与
+のための
+3 D 都市モデル
+拡張製品仕様書
+（案）
+」の解説も
+示す。
+出典
+：3次元空間情報基盤アーキテクチャ設計報告書
+https://www.ipa.go.jp/dadc/architecture/pdf/pj_report_3dspatialinfo_doc_202208_1.pdf
+本技術
+検証レポート
+の作成は、次の業務で実施した。
+ 業務名：
+デジタルツイン構築に向けた
+3D 都市モデルの整備に関する調査研究
+ 発注者：デジタル庁
+ 受注者：株式会社パスコ・国際航業株式会社・中日本航空株式会社共同事業体
+ 履行期間：令和
+4 年
+6 月
+2 日
+～令和
+5 年
+3 月
+2 4 日
+(2)
+ 開発したツールの全体像この業務で開発したツールの
+全体像を
+図
+1 - 2 に示す
+。
+図
+ 1-2 開発ツールの全体像
+なお、開発した
+ツールのソースコードは、
+Project PLATEAU
+のGitH
+u b において、オープンソース
+として公開されているので参照いただきたい。
+
+P LATEAU
+のための
+空間
+ID 生成ツール
+：https://github.com/Project
+-PLATEAU/PLATEAU
+-generator
+- for
+-spatialid
+(3)
+ 「空間
+ID 」の仕様
+3 D 都市モデルに付与する「空間
+I D」は、独立行政法人情報処理推進機構に設置されたデジタルアー
+キテクチャ・デザインセンター
+（以下、「
+D ADC 」という）
+が設計する仕様に準拠する。
+DADC
+は、
+「自動移
+動ロボットプログラム
+※」を立ち上げ、その中に設置された「
+3 次元空間情報基盤アーキテク
+チャ検討会」にて、「空間
+ID 」に関する技術仕様を検討している。
+※https://www.ipa.go.jp/dadc/architecture/wg_autonomousmobilerobot.html
+「空間
+ID 」とは、
+実世界（
+3 次元空間
+）を、階層構造を持つ空間ボクセル
+で分割し、個々のボクセ
+ルに一意に与えられた識別子のことをいう。
+空間
+I D のコンセプト
+とそのイメージを
+表
+1 - 1 と図
+1 - 3 に
+示す。
+表
+ 1-1 空間
+IDのコンセプト
+コンセプト
+説明
+1 ボクセルによる分割と
+ID の付与
+3次元空間を直方体形状のボクセルに分割する
+。
+各ボクセルは一意の
+I D （識別子
+）である
+「空間
+I D 」を持つ
+。
+2 ボクセルは階層構造を
+持つ
+階層構造（複数のズームレベル）を持ち、ズームレベルに応じてボクセルサイズが変化する。最上位の階層をズームレベル
+0 とし、ズームレベルが
+1 つ増えるごとにボ
+クセルの
+8 分割を繰り返す。
+階層（ズームレベル）間で親子関係を持つ。同一ズームレベルにおけるボクセル同士は重複しない。
+図
+ 1-3 空間
+ID（空間ボクセル）のイメージ
+「空間
+ID 」が定める
+空間（直方体形状のボクセル空間）
+の定義を
+表
+1 - 2 に、構成要素の
+全体像を
+図
+1 - 4 に示す
+。
+表
+ 1-2 空間
+IDによって
+定まる
+空間ボクセル
+の定義
+空間
+ID によって定まる
+空間ボクセルの定義
+1 空間の分割方式
+水平方向
+地球のほぼ全体をカバーする領域をズームレベル
+0 とし、ズームレベル
+が
+1 つ増えるごとに
+4 分割を繰り返す。
+地理院タイル（
+X YZ タイル）と同じ分割方式。
+https://maps.gsi.go.jp/development/siyou.html
+を参照。
+鉛直方向
+標高
+0 m ～±
+3 3,554,432m
+をズームレベル
+0 とし、ズームレベルが
+1 つ
+増えるごとに
+2 分割を繰り返す。
+空間ボクセルを配置する高さの基準面はジオイド面。
+空間
+I D の形式
+{z}/{f}/{x}{y}
+で記録される。
+{ z}
+:ズームレベル、
+{f}: 鉛直方向インデックス、
+{ x}: 経度
+(東西方向
+)インデックス、
+{y}: 緯度
+(南北方向
+)インデックス
+出典：３次元空間情報基盤アーキテクチャ設計報告書（イメージ図
+を引用
+）
+https://www.ipa.go.jp/dadc/architecture/pdf/pj_report_3dspatialinfo_doc_202208_1.pdf
+空間
+ID は、直方体形状（
+ボクセル
+）の
+3 次元
+空間を
+一意に
+特定
+する
+ボクセル
+は階層構造を持つ（
+上位のボクセルを
+8 分
+割すると
+下位のボクセルになる）
+ボクセルの
+大きさを
+決める水平
+方向
+／鉛直方向
+の分
+割ルールがある
+図
+ 1-4 空間
+ID構成要素の
+全体像
+経度、緯度、標高及びズームレベルから空間
+I D を構成する各インデックス（
+{f} 、
+{ x} 、
+{ y} ）を算出す
+るための計算式を次に示す。
+l ng ：経度
+[ 10 進度
+]
+lat ：緯度
+[ 10 進度
+] 、
+l at _rad
+：緯度
+[ラジアン
+]
+h ：標高
+[ m]
+z：ズームレベル
+n = 2 ^
+z
+Z = 25 （ボクセルの高さが
+1 m となるズームレベル）
+H = 2 ^ Z
+[m]
+f = floor(n * h / H)
+x = floor(n * ((lng + 180) / 360))
+y = floor(n * (1
+-log(tan(lat_rad) + (1 / cos(lat_rad))) / PI) / 2)
+出典：https://github.com/unvt/zfxy
+- spec
+出典：第
+5 回
+3 次元空間情報基盤アーキテクチャ検討会資料
+https://www.ipa.go.jp/dadc/architecture/pdf/pj_report_3dspatialinfo_doc
+-appendix_202212_1.pdf
+緯度
+0 度の場合の
+各ズームレベルのボクセルサイズ
+を、
+表
+1 - 3 に示す。
+表
+ 1-3 ボクセル
+サイズの例（緯度
+0度の場合のサイズ）
+ズームレベル
+水平方向
+鉛直方向
+( m)
+ズームレベル
+水平方向
+鉛直方向
+( m)
+東西方向
+(m)
+南北方向
+( m)
+東西方向
+(m)
+南北方向
+( m)
+0 40,075,016.68
+40,075,016.68
+3 3,554,432
+1 4
+2 ,445.98
+2 ,445.98
+2 ,048
+2 0,037,508.34
+2 0,037,508.34
+1 6,777,216
+1 5
+1 ,222.99
+1 ,222.99
+1 ,024
+1 0,018,754.17
+1 0,018,754.17
+8 ,388,608
+1 6
+6 11.50
+6 11.50
+5 12
+5 ,009,377.09
+5 ,009,377.09
+4 ,194,304
+1 7
+3 05.75
+3 05.75
+2 56
+2 ,504,688.54
+2 ,504,688.54
+2 ,097,152
+1 8
+1 52.87
+1 52.87
+1 28
+1 ,252,344.27
+1 ,252,344.27
+1 ,048,576
+1 9
+7 6.44
+7 6.44
+6 4
+6 26,172.14
+6 26,172.14
+5 24,288
+2 0
+3 8.22
+3 8.22
+3 2
+3 13,086.07
+3 13,086.07
+2 62,144
+2 1
+1 9.11
+1 9.11
+1 6
+1 56,543.03
+1 56,543.03
+1 31,072
+2 2
+9 .55
+9 .55
+7 8,271.52
+7 8,271.52
+6 5,536
+2 3
+4 .78
+4 .78
+1 0
+3 9,135.76
+3 9,135.76
+3 2,768
+2 4
+2 .39
+2 .39
+1 1
+1 9,567.88
+1 9,567.88
+1 6,384
+2 5
+1 .19
+1 .19
+1 2
+9 ,783.94
+9 ,783.94
+8 ,192
+0 .60
+0 .60
+0 .5
+1 3
+4 ,891.97
+4 ,891.97
+4 ,096
+出典：第
+5 回
+3次元空間情報基盤アーキテクチャ検討会資料（表を引用）
+https://www.ipa.go.jp/dadc/architecture/pdf/pj_report_3dspatialinfo_doc
+-appendix_202212_1.pdf
+2  開発ツールの技術仕様この業務で開発した「空間
+ID を付与
+した
+3 D 都市モデル生成
+ツール」と「
+空間
+ID のメタデータ生成
+ツール」の
+技術仕様を解説する
+。なお、両者のツールで使用したオープンソースソフトウェア
+（O SS ）ライブラリは、
+商用利用される可能性も想定し、
+非コピーレフトのライセンスとした。
+2.1 アーキテクチャ図
+(1)
+ 空間
+I D を付与
+した
+3 D 都市モデル生成
+ツール
+図
+ 2-1 空間
+ID を付与
+した
+3D都市モデル生成ツール：
+アーキテクチャ
+図
+■システムアーキテクチャ図
+■データアーキテクチャ図
+(2)
+ 空間
+I D のメタデータ
+生成ツール
+図
+ 2-2 空間
+IDのメタデータ
+生成
+ツール
+：アーキテクチャ図
+■システムアーキテクチャ
+図
+■データアーキテクチャ図
+2.2 システム機能
+設計
+開発ツールの
+システム
+機能
+を以降
+に示す。
+(1)
+ 空間
+I D を付与した
+3 D 都市モデル生成
+ツール
+1)
+ 機能概要本ツールは、コマンド処理によって動作するプログラムとし、
+バッチファイルやシェルスクリプト
+によって一括処理できるものとした。
+本ツールの
+機能概要
+を表
+2 - 1 に示す。
+表
+ 2-1 空間
+IDを付与
+した
+3D都市モデル生成
+ツールの
+機能
+概要
+機能
+説明
+Pythonモジュール
+1 パラメータ処理
+ 処理の基準とする空間ボクセルのズームレベル（最大ズームレベル）をパラメータで指定する。
+ 交差判定の対象とするジオメトリの
+LOD
+をパラメータ
+で指定
+する。パラメータ未指定の場合は
+LOD3
+とする。
+ 空洞部の空間
+ID を生成するかどうかをパラメータで指定する。
+ 空間
+ID を最適化するかどうかをパラメータで指定する。
+citygml2id
+2 処理対象とする
+C ityGML
+ファイル
+の読み込み
+ CityGML
+ファイルを
+lxml を使ってロードする。
+ ジオメトリが
+XLink で別の要素を参照している場合は参照先の
+ジオメトリを展開し、
+X Link を含まない一時的な
+XML
+ファイル
+に出力する。
+inputsprepare
+3 処理対象ジオメトリの抽出
+ 機能
+2 で出力した
+XML ファイルを
+lxml を使ってロードする。
+ 各地物に対して機能
+1 で指定された
+LOD 以下の最も詳細度の
+高い
+LOD のジオメトリのみを処理対象とする。
+例えば、建築
+物のインスタンスが
+LOD2
+とLOD1 のジオメトリをもつ場合、
+パラメタで
+LOD2 指定したときは、
+LOD2
+のジオメトリ
+のみを
+対象とする。
+ 表
+2 - 2 に示すように
+LOD に対応するジオメトリの要素名は地
+物クラスによって異なるため外部ファイル
+（
+resources/geometry.csv
+）にて定義する。このファイルでは
+ジオメトリの要素名に加え、ジオメトリが２次元であるか３次元であるかも定義する。抽出したジオメトリにもこの次元情報を保持しておき、機能
+5 で参照する。
+ 各地物の
+処理対象
+LOD
+のジオメトリをポリゴンに分解
+する。
+Solid
+の場合は外側のサーフェス
+のみを対象とする
+。
+ p yproj を使って分解したポリゴンを擬似メルカトル座標
+（EPSG:3857
+）に変換する。
+Inputs
+p repare
+機能
+説明
+Pythonモジュール
+ １ポリゴン１地物となるように
+一時的
+なGeoJSON
+ファイル
+を
+作成する。その際、
+C ityGML
+のgml:id
+属性を
+GeoJSON
+の
+gml_id プロパティに設定する。よって、同じ
+gml_id
+プロパ
+ティ値を持つ地物が複数出力されることになる。
+ 一時的な
+GeoJSON
+をPython
+の標準ライブラリ
+json
+を使っ
+てロードする。
+4 地物インスタンスを包含する空間
+I D
+（ボクセル）の生成
+P yVista を使ってポリゴンをトライアングルに分割し、その
+BoundingBox
+を算出する。
+ ZFXY タイルの水平方向については、機能
+1 で指定されたズー
+ムレベルの
+XY Z タイルのうち、この
+BoundingBox
+を包含する
+最小の座標範囲を求め、対応するタイルインデックス範囲を計算する。
+ ZFXY タイルの鉛直方向については、
+BoundingBox
+を包含する
+最小座標範囲を求め、
+表
+1 - 2 に従い対応するインデックス範囲
+を計算する。
+ 求めた
+ZFXY タイルの各要素
+から空間
+ID の文字列を生成する。
+ 生成した空間
+ID は地物
+ID （gml:id ）ごとに管理する。
+ 空間
+ID （ボクセル）生成の際の座標計算については
+表
+2 - 6 に
+詳述する。
+g rids
+3 次元交差判定
+ BoundingBox
+を包含する空間
+ID 群から実際に
+トライアングル
+要素と交差する空間
+ID を抽出する。その際、機能
+3 で設定し
+たジオメトリの次元情報を参照し、３次元あるいは２次元の処理を適用する。３次元の交差判定には
+PyVista
+ライブラリを、
+２次元の交差判定には
+PyGEOS
+ライブラリを使用する。
+ 具体的なアルゴリズムは
+表
+2 - 6 に詳述する。
+g rids
+6 立体内側（空洞部）の空間
+I D の生成
+ 鉛直方向の最小値と最大値の間を埋めることで
+Solid
+で表現さ
+れる占有領域部分（
+S olid 内の空洞部）の空間
+ID を生成する。
+ 空間
+ID の文字列のフォーマットは
+表
+1 - 2 に従う。ただし、２
+次元のデータは
+{z}/{x}/{y}
+に縮退したフォーマットとする。
+ この時点のズームレベルは機能
+1 で指定したズームレベルであ
+る。
+ 機能
+1 で空洞部の空間
+ID を生成するように指定された場合の
+み実行するオプション機能である。
+ 具体的なアルゴリズムは
+表
+2 - 7 に詳述する。
+g rids
+空間
+I D の最適化
+ 図
+4 - 1 の考え方に基づき、空間
+I D を上位のズームレベルに統
+合
+/最適化する。
+g rids
+機能
+説明
+Pythonモジュール
+ 機能
+1 で空間
+ID を最適化するように指定された場合のみ実行
+するオプション機能で
+ある。
+空間
+I D と地物
+I D の
+ペアリスト生成
+（C SV 形式）
+ 機能
+5 、6 及び
+7 の処理結果を
+C SV ファイルに出力する。
+ この
+CSV ファイルには
+表
+4 - 5 で示すヘッダ行を出力する。
+o utputs
+空間
+ID を付与した
+CityGML
+ファイル
+の出力
+ CityGML
+ファイルを
+、lxml ライブラリを使って読み込む。
+ 機能
+8 の出力である
+CSV ファイルから空間
+ID と地物
+ID のペ
+アリストを読み込み、地物
+ID をキーとし、空間
+ID のリストを
+値とするディクショナリを作成する。
+ 各地物インスタンスに対し、
+gml:id 属性の値でディクショナリ
+を参照し
+、地物インスタンスに対応する空間
+ID （複数）を取得
+する。
+ 拡張製品仕様書（案）の符号化仕様に基づき、空間
+I D 付与のた
+めの拡張属性要素を生成し、地物インスタンス要素内に挿入す
+る。
+ 拡張属性要素が追加された
+XML
+を
+C ityGML
+ファイルに出力す
+る。
+Id2citygml
+2)
+ 空間
+I D 付与対象の
+3 D 都市モデル
+空間
+ID 付与対象の地物と、
+3次元交差判定に使用する空間属性（ジオメトリ）を
+表
+2 - 2 に示す
+。
+表
+ 2-2 空間
+ID付与対象の地物と交差判定に使用する空間属性
+地物
+ジオメトリ（空間属性）
+1 建築物
+Building
+lod3Solid
+lod2Solid
+lod
+1 Solid
+consistsOfBuildingPart
+(lod3Solid
+)
+consistsOfBuildingPart
+( lod
+2 Solid
+)
+outerBuildingInstallation
+(lod3Geometry
+)
+outerBuildingInstallation
+( lod
+2 Geometry
+)
+8 都市設備
+CityFurniture
+lod3Geometry
+l od
+2 Geometry
+1 0
+lod1 Geometry
+1 1 土地利用
+L andUse
+lod1MultiSurface
+1 2 地形
+ReliefFeature
+t in
+1 3 道路
+R oad
+lod3MultiSurface
+地物
+ジオメトリ（空間属性）
+1 4
+lod
+2 MultiSurface
+1 5
+lod1 MultiSurface
+1 6
+lod0Network
+1 7 植生
+SolitaryVegetationObject
+lod3Geometry
+1 8
+lod2 Geometry
+1 9
+lod1 Geometry
+2 0
+PlantCover
+lod3MultiSolid
+2 1
+lod2 MultiSolid
+2 2
+lod1 MultiSolid
+2 3
+lod3MultiSurface
+2 4
+lod2 MultiSurface
+2 5
+lod1 MultiSurface
+2 6 水部
+W aterBody
+lod1MultiSurface
+2 7 都市計画決定情報
+UrbanPlanningArea
+lod1MultiSurface
+2 8
+QuasiUrbanPlanningArea
+lod1MultiSurface
+2 9
+AreaClassification
+lod1MultiSurface
+3 0
+DistrictsAndZones
+lod1MultiSurface
+3 1
+UseDistrict
+lod1MultiSurface
+3 2
+SpecialUseDistrict
+lod1MultiSurface
+3 3
+SpecialUseRestrictionDistrict
+lod1MultiSurface
+3 4
+ExceptionalFloorAreaRateDistrict
+lod1MultiSurface
+3 5
+HighRiseResidentialAttractionDistrict
+lod1MultiSurface
+3 6
+HeightControlDistrict
+lod1MultiSurface
+3 7
+HighLevelUseDistrict
+lod1MultiSurface
+3 8
+SpecifiedBlock
+lod1MultiSurface
+3 9
+SpecialUrbanRenaissanceDistrict
+lod1MultiSurface
+4 0
+HousingControlArea
+lod1MultiSurface
+4 1
+ResidentialEnvironmentImprovementDistric
+t
+lod1MultiSurface
+4 2
+SpetialUseAttractionDistrict
+lod1MultiSurface
+4 3
+FirePreventionDistrict
+lod1MultiSurface
+4 4
+SpecifiedDisasterPreventionBlockImprovementZone
+lod1MultiSurface
+4 5
+LandscapeZone
+lod1MultiSurface
+4 6
+ScenicDistrict
+lod1MultiSurface
+4 7
+ParkingPlaceDevelopmentZone
+lod1MultiSurface
+4 8
+PortZone
+lod1MultiSurface
+4 9
+SpecialZoneForPreservationOfHistoricalLandscape
+lod1MultiSurface
+5 0
+ZoneForPreservationOfHistoricalLandscape
+lod1MultiSurface
+5 1
+GreenSpaceConservationDistrict
+lod1MultiSurface
+5 2
+SpecialGreenSpaceConservationDistrict
+lod1MultiSurface
+5 3
+TreePlantingDistrict
+lod1MultiSurface
+5 4
+DistributionBusinessZone
+lod1MultiSurface
+5 5
+ProductiveGreenZone
+lod1MultiSurface
+地物
+ジオメトリ（空間属性）
+5 6
+ConservationZoneForClustersOfTraditionalStructures
+lod1MultiSurface
+5 7
+AircraftNoiseControlZone
+lod1MultiSurface
+5 8
+ProjectPromotionArea
+lod1MultiSurface
+5 9
+UrbanRedevelopmentPromotionArea
+lod1MultiSurface
+6 0
+LandReadjustmentPromotionArea
+lod1MultiSurface
+6 1
+ResidentialBlockConstructionPromotionAre
+as
+lod1MultiSurface
+6 2
+LandReadjustmentPromotionAreasForCoreBusinessUrbanDevelopment
+lod1MultiSurface
+6 3
+UnusedLandUsePromotionArea
+lod1MultiSurface
+6 4
+UrbanDisasterRecoveryPromotionArea
+lod1MultiSurface
+6 5
+UrbanFacility
+lod1MultiSurface
+6 6
+TrafficFacility
+lod1MultiSurface
+6 7
+OpenSpaceForPublicUse
+lod1MultiSurface
+6 8
+SupplyFacility
+lod1MultiSurface
+6 9
+TreatmentFacility
+lod1MultiSurface
+7 0
+Waterway
+lod1MultiSurface
+7 1
+EducationalAndCulturalFacility
+lod1MultiSurface
+7 2
+MedicalFacility
+lod1MultiSurface
+7 3
+SocialWelfareFacility
+lod1MultiSurface
+7 4
+MarketsSlaughterhousesCrematoria
+lod1MultiSurface
+7 5
+CollectiveHousingFacilities
+lod1MultiSurface
+7 6
+CollectiveGovernmentAndPublicOfficeFacilit
+ies
+lod1MultiSurface
+7 7
+DistributionBusinessPark
+lod1MultiSurface
+7 8
+CollectiveFacilitiesForTsunamiDisasterPrevention
+lod1MultiSurface
+7 9
+CollectiveFacilitiesForReconstructionAndRevitalization
+lod1MultiSurface
+8 0
+CollectiveFacilitiesForReconstruction
+lod1MultiSurface
+8 1
+CollectiveUrbanDisasterPreventionFacilities
+lod1MultiSurface
+8 2
+UrbanFacilityStipulatedByCabinetOrder
+lod1MultiSurface
+8 3
+TelecommunicationFacility
+lod1MultiSurface
+8 4
+WindProtectionFacility
+lod1MultiSurface
+8 5
+FireProtectionFacility
+lod1MultiSurface
+8 6
+TideFacility
+lod1MultiSurface
+8 7
+FloodPreventionFacility
+lod1MultiSurface
+8 8
+SnowProtectionFacility
+lod1MultiSurface
+8 9
+SandProtectionFacility
+lod1MultiSurface
+9 0
+UrbanDevelopmentProject
+lod1MultiSurface
+9 1
+LandReadjustmentProject
+lod1MultiSurface
+9 2
+NewHousingAndUrbanDevelopmentProject
+lod1MultiSurface
+9 3
+IndustrialParkDevelopmentProject
+lod1MultiSurface
+9 4
+UrbanRedevelopmentProject
+lod1MultiSurface
+9 5
+NewUrbanInfrastructureProject
+lod1MultiSurface
+地物
+ジオメトリ（空間属性）
+9 6
+ResidentialBlockConstructionProject
+lod1MultiSurface
+9 7
+DisasterPreventionBlockImprovementProjec
+t
+lod1MultiSurface
+9 8
+UrbanRenewalProject
+lod1MultiSurface
+9 9
+ScheduledAreaForUrbanDevelopmentProjec
+t
+lod1MultiSurface
+1 00
+ScheduledAreaForNewHousingAndUrbanDevelopmentProjects
+lod1MultiSurface
+1 01
+ScheduledAreaForIndustrialParkDevelopmentProjects
+lod1MultiSurface
+1 02
+ScheduledAreaForNewUrbanInfrastructureProjects
+lod1MultiSurface
+1 03
+ScheduledAreaForCollectiveHousingFacilitie
+s
+lod1MultiSurface
+1 04
+ScheduledAreaForCollectiveGovernmentAndPublicOfficeFacilities
+lod1MultiSurface
+1 05
+ScheduledAreaForDistributionBusinessPark
+lod1MultiSurface
+1 06
+DistrictPlan
+lod1MultiSurface
+1 07
+RoadsideDistrictPlan
+lod1MultiSurface
+1 08
+RuralDistrictPlan
+lod1MultiSurface
+1 09
+HistoricSceneryMaintenanceAndImprovementDistrictPlan
+lod1MultiSurface
+1 10
+DisasterPreventionBlockImprovementZonePlan
+lod1MultiSurface
+1 11
+DistrictDevelopmentPlan
+lod1MultiSurface
+1 12
+SpecifiedBuildingZoneImprovementPlan
+lod1MultiSurface
+1 13
+DistrictImprovementPlanForDisasterPreventionBlockImprovementZonePlan
+lod1MultiSurface
+1 14
+RoadsideDistrictImprovementPlan
+lod1MultiSurface
+1 15
+RuralDistrictImprovementPlan
+lod1MultiSurface
+1 16
+DistrictImprovementPlanForHistoricSceneryMaintenanceAndImprovementDistrict
+lod1MultiSurface
+1 17
+PromotionDistrict
+lod1MultiSurface
+1 18
+District
+lod1MultiSurface
+1 19
+DistrictFacility
+lod1MultiSurface
+1 20
+RuralDistrictFacility
+lod1MultiSurface
+1 21
+RoadsideDistrictFacility
+lod1MultiSurface
+1 22
+ZonalDisasterPreventionFacility
+lod1MultiSurface
+1 23 土砂災害警戒区域
+SedimentDisasterProneArea
+lod1MultiSurface
+(2)
+ 空間
+I D のメタデータ
+生成ツール
+1)
+ 機能概要本ツールは、
+3 D 都市モデルから
+空間
+I D を抽出し
+、抽出した空間
+I D に
+3 D 都市モデルの属性を付与
+する。また、
+Web ブラウザ上に空間
+ID （ボクセル
+）と
+3 D 都市モデルを表示し、
+3 D 都市モデルの属性
+を、空間
+I D のメタデータとして表示する。
+本ツールの機能概要を
+、表
+2 - 3 に示す。
+表
+ 2-3 空間
+IDのメタデータ
+生成ツールの
+機能
+機能
+説明
+P ython
+モジュー
+ル/ JavaScript ファイル
+1 パラメータ処理
+ 空間
+ID を最適化するかどうかをパラメータで指定す
+る。
+ ２次元データに高さを付与する場合、高さの範囲をパラメータで指定する。
+citygml2id
+2 処理対象とする
+C ityGML
+ファイルの
+読み込み
+ CityGML
+ファイルを
+lxml を使ってロードする。
+inputs
+3 ボクセルグリッドの
+生成
+ CityGML
+に付与された空間
+ID を抽出しボクセルグリ
+ッドを構築する。
+ 空間
+I D が{z}/{x}/{y}
+で表される２次元の場合
+{f}
+に
+相当する要素には
+None を設定し、３次元のデータ
+と区別できるようにしておく。
+g rids
+2 次元データへの高さ
+付与
+ 機能
+1で指定された最小高さから最大高さまで
+3 次元
+空間
+ID を生成する。
+ 機能
+1で高さを付与するように指定された場合のみ実行するオプション機能である。
+ 2 次元地物への空間
+I D 付与の考え方の補足説明を
+2)
+に示す。
+grids
+空間
+I D の最適化
+ 図
+4 - 1 の考え方に基づき、空間
+I D を上位のズームレ
+ベルに統合
+/最適化する。
+ 機能
+1 で空間
+ID を最適化するように指定された場合
+のみ実行するオプション機能である。
+grids
+空間
+I D と地物
+I D のペ
+アリスト生成（
+C SV
+形
+式）
+ 機能
+3 、4 及び
+5 の処理結果を
+C SV ファイルに出力す
+る。
+ この
+CSV ファイルには
+表
+4 - 5 で示すヘッダ行を出力
+する。
+o utputs
+空間
+I D をボクセルデ
+ータに変換し
+W eb
+ブ
+ラウザ上で表示
+ 地物
+ID と空間
+ID のペアリストを記録した
+外部
+ファイ
+ル（
+CSV
+形式：
+図
+4 - 4 参照
+）をユーザが
+アップロード
+する。
+server (
+ビューア
+)
+index.js (
+ビュー
+ア
+)
+機能
+説明
+P ython
+モジュー
+ル/ JavaScript ファイル
+ アップロードされたファイルを受け取ったサーバは
+空間
+I D からボクセル座標を計算する。
+ Web ブラウザでのボクセル表示に
+Cesium.Box
+クラ
+スを使用するため、空間
+ID からボクセル中心の座標
+と３辺のサイズを
+E PSG:4978
+で求める。
+ ボクセルの高さを求める場合、標高に
+EGM96
+のジオ
+イド高を付加する。座標計算のアルゴリズムは
+2.3
+(2)
+の
+5) 空間
+ID （ボクセル）の座標計算アルゴリズム
+に
+詳述する。
+ 各ボクセルに対して中心座標、サイズ、空間
+ID 、地物
+ID （複数）を関連づけて
+JSON
+形式で
+Web
+ブラウザ
+に返却する。
+ JSON を受け取ったクライアントは
+C esium.Box
+でボ
+クセルジオメトリを構築し
+Cesium.Entity
+として表
+示する。
+ ２次元データには
+Cesium.Rectangle
+を使い、
+Cesium.Entity
+として表示する。
+ C esium.Entity
+には
+gml_ids
+という名前で当該ボク
+セルに含まれる地物
+ID の配列を格納しておく。
+3 D 都市モデルの表示
+ Ci tyGML
+から変換された
+PLATEAU
+View
+用の
+3 D
+Tiles
+/MVT
+（Mapbox Vector Tile
+）をアップロード
+する。アップロードするファイルは事前に
+Z IP アー
+カイブしておく。
+ 3 D Tile
+s を
+W eb 配信できるようにサーバの所定のデ
+ィレクトリに配置する。
+ M VT
+をGeoJSON
+に変換する。
+MVT に複数ズームレ
+ベルのデータが含まれている場合は最大ズームレベルのデータのみを変換する。変換した
+GeoJSON
+は
+W eb 配信できるようにサーバの
+所定のディレクトリ
+に配置する。
+ 3D Tiles/MVT(GeoJSON)
+を
+W eb ブラウザ上に表示す
+る。3D Tiles
+はCesium.Cesium3DTileset
+を使って
+表示する。
+MVT
+（G eoJSON
+）は
+Cesium.GeoJsonDataSource
+を使って表示する。
+ この機能は
+3D 都市モデルとの重畳表示により空間
+ID
+s erver (
+ビューア
+)
+index.js (
+ビュー
+ア
+)
+機能
+説明
+P ython
+モジュー
+ル/ JavaScript ファイル
+（ボクセル）の妥当性を検証するための副次的な機能である。
+空間
+ID （ボクセル）と
+3D 都市モデルを重畳
+表示
+ Web ブラウザ上で同時に表示する。
+ チェックボックスによりデータの表示を切り替えられるようにする。
+index.js (
+ビュー
+ア
+)
+1 0 空間
+ID （ボクセル）へ
+の3D 都市モデル属性
+情報の付与
+ Cesium.Entity
+形式の空間
+ID （ボクセル）に格納され
+たgml_ids
+の各値に対応する属性情報を
+3D
+Tiles/MVT(GeoJSON)
+から取得し
+Cesium.Entity
+の
+description
+プロパティに
+HTML
+形式で設定する。
+ 3D Tiles / MVT(GeoJSON)
+が保持する属性情報のう
+ち空間
+ID （ボクセル）に付与する属性項目は
+attribute.js
+のattribute_def_
+3 d および
+attribute_def_
+2 d に定義する。
+設定方法については
+2.3
+(2) の
+6) 属性付与の設定
+に詳述する。
+ この機能は
+3D 都市モデル、空間
+ID （ボクセル）の順
+にデータをアップロードした際に実行され、逆の順序でアップロードした場合は実行されない。
+ この機能は
+3D 都市モデルとの重畳表示により空間
+ID
+（ボクセル）の妥当性を検証するための副次的な機能である。
+index.js (
+ビュー
+ア
+)attribute.js (
+ビュ
+ーア
+)
+11 ボクセルデータ（空間
+I D ）のメタデータ
+表示
+ C esium.Entity
+のdescription
+に設定した属性情
+報の表示イメージを
+図
+2 - 3 に示す。
+index.js (
+ビュー
+ア
+)
+図
+ 2-3 空間
+IDのメタデータ表示の仕組み
+2)
+ 2 次元地物への空間
+ID 付与の考え方
+高さ情報を持たない
+2 次元の地物に対応した空間
+ID の形式については、
+図
+2 - 4 に示すとおり、地理
+院タイル（
+XYZ タイル）へ変換することが検討されている。
+一方で、高さを持たない面として整備される
+3 D 都市モデルの土地利用や都市計画決定情報を、地上
+/地下の空間を指す高さを持つボクセルに反映し活用するケース
+も想定される。そこで、本ツールで
+は、
+2 次元の地物
+に付与された
+2 次元の空間
+I D （X YZ タイル）から、指定した標高値の範囲内の
+3 次
+元の空間
+I D （Z FXY タイル）を生成する機能を用意した。変換の流れを
+図
+2 - 5 に示す。
+出典：
+3次元空間情報基盤アーキテクチャ設計報告書
+https://www.ipa.go.jp/dadc/architecture/pdf/pj_report_3dspat
+ialinfo_doc_202208_1.pdf
+図
+ 2-4 高さ情報を持たないデータに対応した空間
+IDの形式
+図
+ 2-5
+2次元地物の空間
+ID（
+XYZタイル）を
+3次元の空間
+ID(ZFXYタイル
+)へ変換する流れ
+3)
+ ビューア
+で表示する
+3 D 都市モデル
+ビューア
+で表示する
+3 D 都市モデルは、
+FME Hub
+で公開されている
+F ME ワークスペース
+「P LATEAU2
+可視化用データ変換
+（https://hub.safe.com/?page=1&page_size=10&order=relevance&query=plateau
+）」によ
+って
+変
+換された
+Cesium 3D Tiles
+データセット
+(3D モデル
+) または
+Mapbox
+Vector
+Tile (MVT)
+データセッ
+ト
+(2D ポリゴン
+) を使用する。
+メタデータの表示には
+gml:id
+を使用するため、
+JSON
+属性に
+gml:id
+が
+記録されていない場合は、このワークスペースを編集し出力
+する
+。
+2.3 プログラム設計
+(1)
+ 空間
+I D を付与
+した
+3 D 都市モデル生成
+ツール
+1)
+ プログラム構成「空間
+I D を付与
+した
+3 D 都市モデル生成
+ツール」のプログラム構成を、
+表
+2 - 4 に示す。
+表
+ 2-4 空間
+IDを付与
+した
+3D都市モデル生成
+ツール
+のプログラム構成
+プログラム構成
+説明
+1 メインプログラム
+citygml2id.py
+ CityGML
+から
+gml_id
+と空間
+ID のペアを
+CSV
+出力する
+ツール
+ 表
+2 - 1 に示す機能
+1 ～8 に対応
+id2citygml.py
+ 空間
+ID のCSV ファイルから
+CityGML
+ファイルを更新（空
+間
+I D の拡張属性作成）するツール
+ 表
+2 - 1 の機能
+9 に対応
+3 サブプログラム
+grids.py
+ ボクセルグリッドを構築するためのプログラム
+inputs.py
+ ファイルを入力するためのプログラム
+outputs.py
+ ファイルを出力するためのプログラム
+prepare.py
+ CityGML
+ファイルを
+前処理
+（解析）
+するためのプログラム
+constants.py
+ 定数定義
+表
+2 - 4 に示す各プログラムの
+関数
+構成を
+表
+2 - 5 に示す。
+表
+ 2-5 プログラム
+（空間
+IDを付与
+した
+3D都市モデル生成
+ツール
+）の関数構成
+プログラム
+関数名
+説明
+1 citygml2i
+d.py
+1 - 1
+main
+ [extract] のフラグに応じ、以下の関数を切
+り替えて処理
+[1
+- 2] xml2id
+[1
+-3] geom2id
+ 以下の関数を内部参照
+[ 3 -1]grids.get
+[1
+- 2] xml2id
+[1
+-3] geom2id
+1 - 2
+xml2id
+ 空間
+ID 付与済の
+C ityGML
+ファイルから
+、
+拡張属性に記録されている
+空間
+ID を抽出
+ 以下の関数を内部参照
+[4
+-1] inputs.load_xml
+[3
+- 2 - 1 5 ] grid.extract_ids
+[3
+- 2 -16] grids.extrude
+[5
+-1] outputs.export_csv
+プログラム
+関数名
+説明
+1 - 3
+geom2id
+ ジオメトリ
+から
+3 次元交差判定を用いて、
+空間
+ID を生成
+ 以下の関数を内部参照
+[4
+-2] inputs.load_features
+[3
+- 2 -4] grid.load_geom_data
+[5
+-1] outputs.export_csv
+2 id2citygm
+l.py
+2 - 1
+main
+ 以下の関数を内部参照
+[4
+- 4] inputs.get_target_gml_files
+[4
+-5] inputs.get_target_id_files
+[5
+-2] outputs.build_output_paths
+[2
+-2] find_id_file
+[2
+-8] get_output_element_info_file
+[4
+-1] inputs.load_xml
+[2
+- 3 ] load_ids
+[2
+- 4 ] update_xml
+[2
+- 7 ] output_xml
+2 - 2
+find_id_file
+ .gml ファイルに対応する
+.csv ファイルの
+検索
+2 - 3
+load_ids
+ CSV ファイルから空間
+ID を読み込み
+ 以下の関数を内部参照
+[4
+-3] inputs.load_ids
+2 - 4
+update_xml
+ C ityGML
+を更新
+ 以下の関数を内部参照
+[2
+-5] update_xml_embedding
+[2
+-6] update_xml_reference
+2 - 5
+update_xml_embedding
+ 空間
+I D をCityGML
+拡張属性に埋め込み
+ 以下の関数を内部参照
+[2
+- 10] get_output_element_info
+2 - 6
+update_xml_reference
+ 外部ファイル（
+C SV ファイル）参照用の相
+対パスを
+C ityGML
+拡張属性に埋め込み
+ 以下の関数を内部参照
+[ 2 - 9] get_output_element_info_doc
+2 - 7
+output_xml
+ CityGML
+ファイルを出力
+プログラム
+関数名
+説明
+2 - 8 get_output_element_info_file
+ CityGML
+ファイル内の地物型から空間
+I D
+の出力要素の情報を取得
+ 以下の関数を内部参照
+[4
+-1] inputs.load_xml
+[2
+-9] get_output_element_info_doc
+2 - 9 get_output_element_info_doc
+ メモリ上の地物型の情報から空間
+I D の出
+力要素の情報を取得
+ 以下の関数を内部参照
+[2
+-10] get_output_element_info
+2 - 10 get_output_element_info
+ 空間
+ID の出力要素の情報をロードし取得
+g rids.py
+3 - 1
+get
+ ボクセルグリッドを生成
+3 - 2
+Grid
+ ボクセルグリッドオブジェクトのクラス
+定義
+3 - 2 - 1 normalize_size
+ ボクセルサイズの正規化
+3 - 2 - 2
+encode_key
+ 座標インデックスを
+空間
+ID へ変換
+3 - 2 - 3
+decode_key
+ 空間
+ID を座標
+値へ変換
+3 - 2 - 4 load_geom_data
+ ジオメトリデータの読
+み込み(PyVista
+に
+よるポリゴンデータ処理
+)
+3 - 2 - 5 _update_by_geom_3d( _update_by_geom_2d)
+ ジオメトリデータを用いたアップデート
+(PyVista
+/PyGEOS
+を用いたポリゴンデー
+タ処理
+)
+3 - 2 - 6 build_collision_filter
+ 交差判定
+(PyVista
+による衝突判定
+)の準備
+3 - 2 - 7 build_geom_3d
+ 対象オブジェクトを
+構成するポリゴンジ
+オメトリの作成
+(PyVista
+によるポリゴン
+データ処理
+)
+3 - 2 - 8 build_box_3d
+ 3 次元交差判定のための
+ボクセル
+ジオメ
+トリ
+の作成(PyVista
+による
+キューブ
+デー
+タ処理
+)
+3 - 2 - 9 build_geom_2d
+ 対象オブジェクトを構成するポリゴンジオメトリの作成
+(PyGEOS
+によるポリゴン
+データ処理
+)
+3 - 2 - 10 build_box_2d
+ 2 次元交差判定のための矩形ジオメトリの作成
+(PyGEOS
+による矩形データ処理
+)
+3 - 2 - 1 1 interpolate
+ 空洞を埋めるための補間処理
+3 - 2 - 12
+merge
+ ボクセルを統合する最適化処理
+3 - 2 - 13 load_id_data
+ 空間
+ID の読
+み込み
+3 - 2 - 14 _update_by_id
+ 空間
+ID による
+更新
+プログラム
+関数名
+説明
+3 - 2 - 15
+extract_ids
+ 空間
+ID の抽出
+3 - 2 - 16
+e xtrude
+ 2 次元データへの高さ付与
+3 - 3
+ZFXYGrid
+ ZFXY グリッドのクラス定義
+3 - 3 - 1
+encode_key
+ 座標インデックス
+を空間
+ID へ変換
+3 - 3 - 2
+decode_key
+ 空間
+ID を座標値へ変換
+3 - 3 - 3
+merge
+ ボクセルを統合する最適化処理
+3 - 3 - 4
+_merge_sub
+ ボクセルを統合する最適化処理
+3 - 3 - 5 _update_by_id
+ 空間
+ID による
+更新
+3 - 3 - 6
+extract_ids
+ 空間
+ID の抽出
+3 - 3 - 7
+extrude
+ 2 次元データへの高さ付与
+inputs.py
+4 - 1
+load_xml
+ CityGML
+ファイルの読み込み
+4 - 2
+load_features
+ ジオメトリの読み込み
+4 - 3
+load_ids
+ 空間
+I D の読み込み
+4 - 4
+get_target_gml_files
+ ディレクトリ内の処理対象となる
+.gml
+ファイルの列挙
+4 - 5
+get_target_id_files
+ ディレクトリ内の処理対象となる
+.csv
+ファイルの列挙
+5 outputs.p
+y
+5 - 1
+export_csv
+ 地物
+I D と空間
+I D のペアリストを
+C SV
+形
+式で出力
+5 - 2
+build_output_paths
+ ディレクトリ内の出力パスの一括生成
+p repare.p
+y
+6 - 1
+main
+ 入力となる
+C ityGML
+ファイルの解析
+6 - 2
+resolve_xlink
+ XLink
+の解決
+6 - 3
+extract_geometry
+ ジオメトリの抽出
+6 - 4
+get_geometry_paths
+ ジオメトリ要素の
+X Path
+を取得
+6 - 5
+arrange_path
+ X ML 要素の検索用に
+X Path
+を調整
+6 - 6
+arrange_namespace
+ XML 内の名前空間の宣言を調整
+6 - 7
+arrange_namespace_file
+ XML ファイル内の名前空間の宣言を調整
+2)
+ ３次元の交差／占有領域判定の
+アルゴリズム
+サブプログラム「
+g rids.py
+」で行う
+3 D 都市モデルと空間
+I D（空間ボクセル）の交差／占有領域の判
+定のアルゴリズムを
+表
+2 - 6 と表
+2 - 7 に示す。
+表
+ 2-6 3 次元の交差判定のアル
+ゴリズム
+処理の流れ
+イメージ
+ Solid
+をPolygon
+に分解
+ Polygon
+をTriangle
+に分解
+ T riangle
+への分解には
+PyVista
+ライブラリの
+PolyData.triangulate()
+メソッドを利用する。
+ Triangle
+のMinimum Bounding Box
+と重なる
+ボクセル
+を抽出（
+ボクセルの頂点座標はズームレベルから決定する）
+ ボクセルの頂点座標は擬似メルカトル座標系（
+EPSG:3857
+）
+で計算する。ズームレベル
+0 のボクセルの水平方向の
+1 辺
+のサイズは
+2 π *6378137
+(m) である。
+ズームレベルが
+1 増
+えるごとに
+サイズは
+1 /2 になるため、
+ズームレベル
+z のボ
+クセルの水平方向の１辺のサイズ
+h(z)
+は以下の
+ようにな
+る。
+h(z) = 2
+π *6378137 / 2 ^ z (m)
+鉛直方向についてはズームレベル
+0 のサイズが
+2 ^ 25 (m)
+であるため、ズームレベル
+z のボクセルの鉛直方向の１辺
+のサイズ
+v(z) は以下のようになる。
+v (z) = 2 ^ 25 / 2 ^ z
+ Triangle
+のMinimum Bounding Box
+の座標範囲を
+min_x, max_x, min_y, max_y, min_z, max_z
+とすると、該
+当するボクセル（複数）の座標範囲は以下のようになる。
+最小
+X ：
+f loor(
+m in_x / h(z))
+* h(z)
+  最大
+X ：ceil(max_x / h(z)) * h(z)
+最小
+Y ：floor(min_y / h(z)) * h(z)
+最大
+Y ：ceil(max_y / h(z)) * h(z)
+最小
+Z ：
+f loor(
+m in_z
+/ v(z))
+* v(z)
+最大
+Z ：ceil(
+m ax_z / v(z))
+* v(z)
+処理の流れ
+イメージ
+ 抽出した
+ボクセル
+とTriangle
+が交差するかどうか判定
+ 擬似メルカトル座標系の座標値は絶対値が大きいため、ボクセルサイズが小さいと浮動小数点の計算の過程で桁落ちが発生する可能性があるため、
+Triangle
+、ボクセルともに原
+点付近に平行移動し、絶対値を小さくしてから交差判定の計算を行う。
+ 交差判定には
+PyVista
+ライブラリ
+の
+vtkCollisionDetectionFilter
+クラスを利用
+する。サイズが
+同じで位置が異なる大量のボクセルが計算対象になること
+から、vtkCollisionDetectionFilter
+.SetMatrix()
+により作成
+済みボクセルを平行移動して再利用することで高速化を図
+る。
+ 交差するすべての
+ボクセル
+をマージ
+（地物インスタンスご
+とに空間
+I D を出力する必要があるため）
+表
+ 2-7 3 次元の占有領域判定
+のアルゴリズム
+処理の流れ
+イメージ
+ 表
+2 - 6 の交差判定によりすべての
+Polygon
+に対して、ボクセルが作成されている状態から
+スタート
+ 説明のため
+S olid の断面に着目する
+ Polygon
+に対して交差判定したため、
+Solid
+の
+内部には
+ボクセル
+が作成されていない
+ 鉛直方向の座標値が最小の
+ボクセル
+と最大の
+ボクセル
+の間にある
+ボクセル
+をすべて追加す
+る
+(2)
+ 空間
+ID のメタデータ
+生成ツール
+1)
+ 全体構成
+図
+2 - 2 のアーキテクチャ図に示した通り、
+本ツールは空間
+ID が付与された
+CityGML
+ファイルを入
+力とし、地物
+ID と空間
+ID のペアリストファイル
+（C SV 形式）を出力するコマンド部と
+、地物
+ID と空
+間ID のペアリストファイルを可視化するためのビューア部に分かれている。
+ビューア部はサーバ機能
+とクライアント機能に分かれているため、
+2) 及び
+3) に画面イメージとソフトウェア構成を示す。
+2)
+ ビューア部の
+画面イメージ
+ビューア部の
+画面イメージを
+図
+2 - 6 に示す。
+図
+ 2-6 ビューア部
+の画面イメージ
+3)
+ ビューア部の
+ソフトウェア構成
+ビューア部
+のソフトウェア構成を
+図
+2 - 7 に示す。
+図
+ 2-7 ビューア部
+のソフトウェア構成
+Top
+画面
+3D 都市
+モデル
+表示
+ボクセル（空間
+ID ）表示
+ボクセル
+のメタデータ
+表示
+4)
+ プログラム構成ビューア部の
+プログラム構成を
+表
+2 - 8 に示す。
+なお、
+地物
+ID と空間
+ID のペアリストファイルを出
+力するコマンド部
+のプログラム構成は、
+2.3
+の
+1) を参照する。
+表
+ 2-8 ビューア部
+のプログラム構成
+プログラム構成
+説明
+1 サーバ
+server.py
+ 空間
+ID からボクセル形状の生成等を行うプログラム
+cleanup.py
+ 一時ディレクトリの古いファイルを削除するプログラム
+3 ビューアクライアント
+index.js
+ サーバへのファイルアップロードとサーバから配信されるデータをビューアに表示するプログラム
+attribute.js
+ 空間
+I D（ボクセル）のメタデータ（
+3 D Tiles/
+Mapbox Vector
+Tile に記録された属性）を取得するプログラム
+表
+2 - 8 に示すプログラムの関数構成を
+表
+2 - 9 に示す。
+表
+ 2-9 プログラム（ビューア部
+）の関数構成
+プログラム
+関数名
+説明
+1 server.py
+1 - 1
+upload_tiles
+ アップロードされた
+3 D 都市モデル
+（3D Tiles
+/
+Mapbox Vector Tile
+）をサーバに展開し、
+CesiumJS
+で読み込むための
+URL をクライア
+ントに返す
+ 以下の関数を内部参照
+[1
+-2]build_tiles
+1 - 2
+build_tiles
+ 3 D 都市モデル（
+3D Tiles
+/ Mapbox Vector Tile
+）
+をサーバに展開
+ 以下の関数を内部参照
+[1
+-3] find_tiles
+[1
+- 4] _build_tiles_2d
+[1
+-7] _build_tiles_3d
+1 - 3
+find_tiles
+ 3D Tiles / Mapbox Vector Tile
+のファイルを検
+索
+1 - 4
+_build_tiles_2d
+ 3D 都市モデル
+のMapbox Vector Tile
+を
+GeoJSON
+に変換してサーバに展開
+ 以下の関数を内部参照
+[ 1 -5]_arrange_feature_2d
+1 - 5
+_arrange_feature_2d
+ G eoJSON
+の
+F eature
+を表示用に調整
+ 以下の関数を内部参照
+[ 1 -6]_arrange_geometry_2d
+1 - 6
+_arrange_geometry_2d
+ G eoJSON
+の
+G eometry
+を表示用に調整
+プログラム
+関数名
+説明
+1 - 7
+_ build_tiles_3d
+ 3 D 都市モデルの
+3 D Tiles
+をサーバに展開
+1 - 8
+upload_csv
+ アップロードされた
+CSV ファイルから空間
+ID
+ボクセルを構築しクライアントに返す
+ 以下の関数を内部参照
+[1
+- 9 ]build_box
+1 - 9
+build_box
+ 空間
+ID から
+空間
+ID ボクセルの
+Box 表現を構
+築
+ 以下の関数を内部参照
+[1
+-12] decode_sid
+[1
+-10]_build_box_2d
+[1
+-11] _build_box_3d
+1 - 10
+_ build_box_2d
+ 以下の関数を内部参照
+[ 1 -13]transform_2d
+1 - 11
+_ build_box_3d
+ 以下の関数を内部参照
+[ 1 -14]transform_3d
+[1
+-15]get_box_size
+1 - 12
+decode_sid
+ 空間
+ID をデコード
+1 - 13
+transform_2d
+ 擬似メルカトル座標系から経緯度座標系（単位：ラジアン）に変換
+1 - 14
+transform_3d
+ 空間
+ID の代表点の座標にジオイド高を付加し
+CesiumJS
+標準の座標系に変換
+1 - 15
+get_box_size
+ CesiumJS
+のBox オブジェクトのサイズを計
+算
+c leanup.py
+2 - 1
+m ain
+ 一時ディレクトリの古いファイルを削除
+3 index.js
+3 - 1
+uploadTiles
+ 3 D 都市モデルの
+3 D Tiles
+/ Mapbox Vector
+Tile
+をアップロード
+ 以下の関数を内部参照
+[ 3 -15]setMessage
+[3
+-3]clearTiles
+[3
+-5]loadTiles
+3 - 2
+up loadV
+oxels
+ CSV ファイル
+( 空間
+I D ボクセル
+)をアップロード
+ 以下の関数を内部参照
+[3
+-4]clearVoxels
+[2
+-8]loadVoxels
+3 - 3
+c learT
+iles
+ 3 D 都市モデルを破棄
+3 - 4
+c learV
+oxels
+ 空間
+ID ボクセルを破棄
+プログラム
+関数名
+説明
+3 - 5
+loadT
+iles
+ 3 D 都市モデルの
+3 D Tiles
+/ Mapbox Vector Tile
+をCesium
+に搭載
+ 以下の関数を内部参照
+[ 3 - 6 ]loadTiles2D
+[3
+-7]loadTiles3D
+3 - 6
+loadTiles2D
+ 3D 都市モデルの
+Mapbox Vector Tile
+を
+Cesium
+に搭載
+ 以下の関数を内部参照
+[ 3 -14]zoomToBounds
+[3
+-12]buildVoxelDescription2D
+3 - 7
+loadTiles3D
+ 3D 都市モデルの
+3D Tiles
+をCesium
+に搭載
+ 以下の関数を内部参照
+[3
+- 14] zoomToBounds
+[3
+-13] buildVoxelDescription3D
+3 - 8
+loadVoxels
+ 空間
+ID ボクセルを
+Box / Rectangle
+形式で
+Cesium
+に搭載
+ 以下の関数を内部参照
+[3
+-9] loadVoxels2D
+[3
+-10] loadVoxels3D
+[3
+-14] zoomToBounds
+[3
+-12] buildVoxelDescription2D
+[3
+-13] buildVoxelDescription3D
+3 - 9
+loadVoxels2D
+ 空間
+ID ボクセルを
+Rectangle
+形式で
+Cesium
+に搭載
+3 - 10
+loadVoxels3D
+ 空間
+ID ボクセルを
+Box
+形式で
+Cesium
+に搭
+載
+3 - 11
+setUIEventHandlers
+ 読み込んだデータの表示を切り替えるための
+UI イベントハンドラを設定
+3 - 12
+buildVoxelDescription2D
+ 空間
+ID （ボクセル
+）の表示用
+メタデータ（
+属性
+情報
+）を構築
+ 以下の関数を内部参照
+[ 4 - 1]getA
+ttributes
+2D
+3 - 13
+buildVoxelDescription3D
+ 空間
+I D（ボクセル）の表示用メタデータ（属性
+情報）を構築
+ 以下の関数を内部参照
+[ 4 -2]getAttributes3D
+3 - 14
+zoomToBounds
+ 2 D/ 3D の座標範囲をズーム表示
+プログラム
+関数名
+説明
+3 - 15
+s etM essage
+ 各種のメッセージを出力
+4 attribute.
+js
+4 - 1
+getAttributes2D
+ Mapbox Vector Tile
+のFeature
+から表示する
+属性情報を取得
+4 - 2
+getAttributes
+3 D
+ 3D Tiles
+のFeature
+から表示する属性情報を取
+得
+5)
+ 空間
+ID （ボクセル）の座標計算アルゴリズム
+3D の空間
+ID 文字列（
+{z}/{f}/{x}/{y}
+形式）から
+Cesium.Box
+を構築するための座標を計算するアルゴ
+リズムは
+表
+2 - 10 の通りである。
+表
+ 2-10 空間
+ID（ボクセル）の座標計算アルゴリズム（
+3D）
+手順
+内容
+備考
+空間
+ID の文字列を分解し
+z, f, x, y
+の各要素を整数で抽出する。
+ズームレベル
+z のボクセルの水平方向
+、鉛直方向
+の
+1 辺のサイ
+ズがそれぞれ
+2 π *6378137
+/ 2 ^ z
+(m)
+、2 ^ 25 / 2 ^ z
+(m)
+にな
+ることを考慮し空間
+ID( ボクセル
+)の座標範囲を擬似メルカトル
+座標系（
+E PSG:3857
+）で計算する。
+pyproj ライブラリを使って各座標を擬似メルカトル座標系
+（E PSG:3857
+）から
+EGM96 height
+（EPSG:5773
+）に変換する。
+その際、変換前の
+Z 座標を一時的に
+0 に設定する。これによ
+り水平方向は経緯度、鉛直報告は負のジオイド高が割り当てられた座標を求めることができる。
+https://epsg.io/5773
+手順
+2 の
+Z 座標から手順
+3 の
+Z 座標を引くことでジオイド高
+を加えた座標を求めることができる。
+pyproj
+ライブラリを使って手順
+4 で求めた座標を経緯度座標
+系（
+E PSG:4326
+）から
+C esium で採用されている座標系
+（EPSG:4978
+）に変換する。
+https://epsg.io/4978
+C esium.Box
+は中心座標と３辺のサイズで指定するため頂点
+座標を平均して中心座標を求める。３辺のサイズは各辺を構成する頂点を手順
+5 と同様の手法で
+EPSG:4978
+に変換した後、
+サイズを求める。
+2D の空間
+ID 文字列（
+{z}/{x}/{y}
+形式）から
+Cesium.Rectangle
+を構築するための座標を計算する
+アルゴリズムは
+表
+2 - 11 の通りである。
+表
+ 2-11 空間
+ID（ボクセル）の座標計算アルゴリズム（
+2D）
+手順
+内容
+備考
+空間
+ID の文字列を分解し
+z, x, y の各要素を整数で抽出する。
+ズームレベル
+z のボクセルの水平方向
+が
+2 π *6378137
+/ 2 ^ z
+(m)
+になることを考慮し空間
+ID( ボクセル
+)の座標範囲を擬似メルカ
+トル座標系（
+E PSG:3857
+）で計算する。
+pyproj ライブラリを使って各座標を擬似メルカトル座標系
+（E PSG:3857
+）から
+経緯度座標系（
+EPSG:4326
+）に変換する。
+Cesium.Rectangle
+は経緯度座標の最小、最大値を
+r adian
+単位
+で指定するため頂点座標を
+degree
+単位から
+radian
+に変換す
+る。
+6)
+ 属性付与の設定
+a ttribute.js
+のattribute_def_
+3 d および
+attribute_def_
+2 d 定数で空間
+ID （ボクセル）に付与する
+3D 都市モデル
+（3 D Tiles/
+Mapbox Vector Tile
+）の属性項目を設定する。
+ attribute_def_3d
+の設定例：
+const attribute_def_3d = [
+    {name: 'attributes/gml:id', title: 'gml:id'},
+{name: '
+名称
+', title: '
+名称
+'},
+    {name: 'attributes/bldg:class', title
+: 'bldg:class'},
+    {name: 'attributes/bldg:usage/0', title: 'bldg:usage'},
+    {name: 'attributes/frn:function/0', title: 'frn:function'},
+    {name: 'attributes/tran:function/0', title: 'tran:function'},
+    {name: 'attributes/veg:class', title: 'veg:class'},
+    {name: 'attributes/wtr:function', title: 'wtr:function'},
+];
+ attribute_def_2d
+の設定例：
+const attribute_def_2d = [
+    {name: 'properties/gml:id', title: 'gml:id'},
+    {name: 'properties/gml_id', ti
+tle: 'gml:id'},
+    {name: 'properties/
+名称
+', title: '
+名称
+'},
+    {name: 'properties/tran:function/0', title: 'tran:function'},
+    {name: 'properties/luse:class', title: 'luse:class'},
+    {name: 'properties/urf:disasterType', title: 'urf:disasterType'},
+    {name: 'properties/urf:function/0', title: 'urf:function'}
+];
+空間
+I D に付与する
+3 D 都市モデルの属性の設定方法を
+表
+2 - 12 に示す。
+表
+ 2-12 空間
+IDに付与する属性項目の設定方法
+項目名
+内容
+備考
+name
+3D 都市モデルの属性のパス
+3 D 地物の場合は
+3D Tiles
+の属性、
+2D 地物の場合は
+MVT(GeoJSON
+)の属性の階層を定義する。項目が配列型
+の場合は配列のインデックスを指定する。（例：tran:function/0
+）
+t itle
+画面に表示する属性項目名
+なお、
+3D Tiles
+及び
+MVT ファイルに記録されている
+3 D 都市モデルの属性
+の内容・
+構造は、
+FME
+Hub で公開されている
+FME ワークスペース
+「PLATEAU2
+可視化用データ変換
+（https://hub.safe.com/?page=1&page_size=10&order=relevance&query=plateau
+）」の仕様に基
+づく。
+7)
+ その他の設定
+PC 環境のスペックにも依存するが
+Cesium.Box
+オブジェクトや
+Cesium.Rectangle
+オブジェクト
+の表示数が多くなると
+Web ブラウザがクラッシュすることがあるため、本ツールでは
+Cesium.Box
+お
+よびCesium.Rectangle
+を生成する数の上限を
+server.py
+のMAX_VOXELS
+に定義
+する。標準の設定
+値は
+である。この上限を超えた分は
+server.py
+で切り捨てた上でクライアントに表示用デー
+タを返す実装となっている。
+3  ツールの利用方法
+3.1 空間
+I D を付与
+した
+3 D 都市モデル
+生成ツール
+(1)
+ 環境構築本ツールの動作要件は次のとおり。
+環境構築手順を
+表
+3 - 1 に示す。
+ Windows / macOS /
+Linux
+ Python 3.9
+表
+ 3-1 環境構築手順（
+空間
+IDを付与
+した
+3D都市モデル
+生成ツール
+）
+環境構築の手順
+コマンド
+Python
+仮想環境を作成し有効化
+する
+（コマンド内の
+`.venv`
+は任意の名前
+に変更可能
+）
+macOS / Linux
+$ python3
+-m venv .venv
+$ source .venv/bin/activate
+Windows
+> python
+-m venv
+.venv
+> .venv
+\ Scripts
+\ Activate
+Python
+仮想環境に依存ライブラリを
+インストール
+macOS / Linux
+$ pip install
+-r requirements.txt
+Windows
+> pip install
+-r requirements.txt
+(2)
+ プログラム使用方法
+1)
+ citygml2id.pyこのプログラムは、
+CityGML
+から
+地物
+I D （gml_id
+）
+と空間
+ID のペア
+リスト
+をCSV
+出力する
+。
+使用方法を次に示す。
+このプログラムの引数の説明を
+表
+3 - 2 に示す。
+表
+ 3-2
+citygml2id.pyの引数
+引数
+説明
+1 input_file_or_dir
+CityGML
+のファイルのパス
+(*.gml) または上位ディレクトリのパス
+2 output_file_or_dir
+地物
+I D と空間
+ID のペアリストのファイルのパス
+(*.csv)
+または上位ディレク
+トリのパス
+-- lod
+処理するジオメトリの最大
+LOD(`1`, `2`, `3`)
+-- grid
+- type
+グリッドタイプ
+(`zfxy`)
+-- grid
+- level
+グリッドのズームレベル
+-- grid
+- size
+グリッドのサイズ。
+x y z
+の順に指定。
+x のみ指定した場合は
+y z にも同じ値
+を適用。将来拡張用。
+-- grid
+- crs
+グリッドの座標参照系の
+EPSG 番号。将来拡張用。
+$ python citygml2id.py
+[ - h] [
+-- lod {1,2,3}] [
+-- grid
+-type {zfxy}] [
+-- grid
+-level GRID_LEVEL] [
+-- grid
+- size
+[GRID_SIZE ...]] [
+-- grid
+-crs GRID_CRS] [
+-- id [ID ...]] [
+-- extract]
+[ -- extrude [EXTRUDE ...]]
+[ -- interpolate] [
+-- merge] [
+-- debug]
+input_file_or_dir
+output
+_file_or_dir
+引数
+説明
+-- id
+ID フィルタ。処理するデータを絞り込む際に
+gml:id
+の値を複数指定可能。
+-- extract
+空間
+ID 付与
+済の
+CityGML
+から
+、空間
+ID を抽出
+し、
+C SV へ出力
+する場合に指
+定。
+1 0
+- -extrude
+２次元データに付与する高さの最小値と最大値（単位：
+m ）。
+-- extract
+オプシ
+ョン指定時のみ有効。
+1 1
+-- interpolate
+立体（
+S olid ）内側の
+空洞を
+ボクセルで
+埋める場合に指定。
+Solid
+形状を持つ「
+B uilding
+（建築物）」「
+City Furniture
+（都市設備）」「
+Vegetation
+（植生）」を空間
+I D に変換する際に使用するオプション。
+1 2
+-- merge
+上位の
+空間
+ID に統合（最適化）
+する場合に指定。
+1 3
+-- debug
+デバッグログ出力および一時ファイル保持を有効にする場合に指定。
+1 4
+- h
+使い方を表示。
+なお、出力する
+C SV ファイルの命名規則は次のとおりとする。
+表
+ 3-3
+CSVファイルの命名規則
+ペアリストの種類
+ファイル名称のルール
+単一のズームレベルで出力されたペアリスト
+g ml ファイル名称（拡張子を除いた部分）
+_ zl{ ズームレベル
+}.csv
+（例）52372215_bldg_6697
+_ zl20.csv
+空間
+I D の統合
+(最適化
+) 処理
+がされたペアリスト
+g ml ファイル名称（拡張子を除いた部分）
+_ zl{ ズームレベル
+}_merged.csv
+（例）52372215_bldg_6697_zl20
+_ merged
+.csv
+このプログラムの使用例
+を以降に
+示す。
+
+[使用例
+1 ]: ファイル単位で変換する
+ 入力：52372215_bldg_6697.gml
+【3 D 都市モデル
+( C ityGML)
+】
+ 出力：52372215_bldg_6697_zl
+22 _merged.csv
+【地物
+ID と空間
+ID のペアリスト
+( CSV
+) 】
+ グリッドタイプ：
+Z FXY
+ 基準（最大）
+ズームレベル：
+2 2
+ 空洞部の空間
+I D 生成：実施
+ ズームレベル最適化：実施
+$ python citygml2id.py D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg
+52372215_bldg_6697.gml D
+: \ 23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg
+\ spatialid
+\52372215_bldg_6697_zl
+22 _merged.csv
+-- grid
+-type zfxy
+-- grid
+- level
+-- merge
+--
+interpolate
+
+[使用例
+2 ] : 標準製品仕様書
+が規定
+するフォルダ構成に対し
+一括処理をする
+ 入力：
+b ldg フォルダ（建築物）と
+f ld フォルダ（洪水浸水想定）
+ 出力：
+g ml ファイルが存在するフォルダの直下に
+s patialid
+フォルダを生成し、
+C SV ファイ
+ルを格納
+ グリッドタイプ：
+Z FXY
+ 基準（最大ズームレベル）：
+2 0
+ 空洞部の空間
+ID 生成：
+S olid 形状の建築物にのみ実施
+標準製品仕様書が規定するフォルダ構成に対し一括処理する場合は、地物ごとによって適用する引数が異なる。例えば、立体（
+S olid ）で作成される建築物は空洞部の空間
+ID を生成する
+引数
+（
+--
+interpolate
+）を設定するが、面（
+S urface ）で作成される水部、土地利用、都市計画決定情報等
+に対し
+ては、このオプションが不要となる。このような場合では、次に示すように、各地物のフォルダに
+対
+し実行することで、それぞれの地物に応じた引数設定をすることができる。
+フォルダ一括処理を実行した場合、地物
+I D - 空間
+I D のペアリストを記録する
+C SV ファイルは、
+g ml
+ファイルを格納するフォルダ直下に生成される「
+s patialid 」フォルダ内に格納される（
+図
+3 - 1 ）。
+図
+ 3-1 一括変換時の
+フォルダ指定
+$ python citygml2id.py D:
+\23207_toyokawa
+-shi_202
+2_citygml_1_spatialid
+\ udx
+\ bldg
+D : \23207_toyokawa
+-shi_2022_citygml_1_
+spatialid
+\ udx
+\ bldg
+-- grid
+-type zfxy
+-- grid
+-level 20
+–
+interpolate
+$ python citygml2id.py D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ fld
+D : \23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ fld
+-- grid
+-type zfxy
+-- grid
+-level 20
+
+[使用例
+3 ] : 2 次元の空間
+I D （地理院タイル
+( XYZ
+タイル
+)）が付与された
+C ityGML
+ファイルから
+空間
+I D を抽出し、
+3 次元の空間
+I D （Z FXY タイル）を生成する
+ 入力
+：523723_luse_6668.gml
+ 出力
+：523723_luse_6668
+_ zl20
+. csv
+ 空間
+I D を生成する標高値の範囲：
+- 10m
+から
+10 0m
+図
+ 3-2
+2次元地物から
+ZFXYタイルを生成
+2)
+ id2citygml.pyこのプログラムは、
+地物
+I D と空間
+ID のペアリストを記録する
+CSV ファイルから
+、CityGML
+ファイ
+ルを更新（空間
+ID の拡張属性
+を新規
+作成又は付与済の空間
+I D を更新
+）する。使用方法を次に示す。
+$ python citygml2id.py
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ luse
+\523723_luse_6668.gml
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ luse
+\ \523723_luse_6668_zl20.csv
+-- grid
+- type z
+fxy
+-- extract
+-- extrude
+-10.0 10
+0.0
+$ python id2citygml.py [
+-h] citygml_file
+_or_dir
+id_file
+_or_dir
+output_file
+_or_dir
+[ -- spatialid
+{embedding
+, reference
+, both
+}]
+このプログラムの引数の説明を
+表
+3 - 4 に示す。
+表
+ 3-4
+id2citygml.pyの引数
+引数
+説明
+1 citygml_file
+_or_dir
+CityGML
+のファイルのパス
+(*.gml) または上位ディレクトリのパス
+id_file
+_or_dir
+地物
+I D - 空間
+ID ペアリストのファイルのパス
+(*.csv)
+または上位ディレクトリ
+のパス
+3 output_file
+_or_dir
+空間
+ID を付与した
+CityGML
+のファイルのパス
+(*.gml)
+または上位ディレクト
+リのパス
+-- spatialid
+空間
+ID の付与方法
+(`embedding`, `reference`, `both`)
+ embedding
+：C ityGML
+ファイルに空間
+I D を直接
+付与
+ reference
+：地物
+ID
+- 空間
+ID ペアリスト
+（C SV ファイル）への相対パスを記録
+⇒C ityGML
+ファイルへの空間
+I D の直接付与は行わず、外部ファイル参照の
+みで空間
+ID と紐付けする場合に使用
+ b oth
+：C ityGML
+ファイルへの空間
+I D 直接付与と
+C SV ファイルへの相対パス
+記録の
+両者を実行
+- h
+使い方を表示
+このプログラムの使用例を以降に示す
+。
+
+[使用例
+1 ]: ファイル単位で変換する
+ 入力：52372215_bldg_6697.gml
+ 地物
+I D と空間
+I D のペアリスト（
+C SV ）：52372215_bldg_6697_zl20.csv
+ 出力：52372215_bldg_6697.gml
+ 空間
+ID の付与方法：
+C ityGML への直接付与と外部ファイル参照（相対パス埋め込み）の両方
+図
+3 - 3 に、空間
+I D を付与する際の引数の設定方法の説明を示す。
+$ python id2citygml.py
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg
+\52372215_bldg_6697.gml
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg
+\ spatialid
+\52372215_bldg_6697_zl20.csv
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg
+\52372215_bldg_6697.gml
+-- spatialid both
+図
+ 3-3 空間
+ID付与方法
+を指定する際
+の引数設定
+
+[使用例
+]2 : 標準製品仕様書が規定するフォルダ構成に対し一括処理をする
+ 入力：
+bldg フォルダ（建築物）と
+fld フォルダ（洪水浸水想定）
+ 地物
+ID と空間
+ID のペアリスト（
+CSV
+）：bldg フォルダ（建築物）と
+fld フォルダ（洪水浸
+水想定）
+内にある
+s patialid
+フォルダ
+ 出力：
+bldg フォルダ（建築物）と
+fld フォルダ（洪水浸水想定）
+ 空間
+I D 付与方法：
+CityGML への直接付与と外部ファイル参照（相対パス埋め込み）の両方
+C ityGML ファイルを一括更新（空間
+I D の拡張属性を作成）する場合、地物
+I D と空間
+I D のペアリス
+トを記録する
+CSV ファイルが、
+g ml ファイルを格納するフォルダ直下の「
+s patialid
+」フォルダ内に格
+納されていることを前提とし（
+図
+3 - 1 参照）、
+地物
+ID
+- 空間
+ID ペアリストのファイル
+パス
+は、
+u dx フ
+ォルダの直下にある各地物のフォルダ（例：
+b ldg
+、
+f ld 等）を指定する。
+「spatialid
+」フォルダ内に
+g ml ファイルに対応する複数の
+C SV ファイルが存在する場合は、
+ズーム
+レベルが大きく、また空間
+I D の最適化処理が実行されているファイルを優先し、
+C ityGML
+ファイルを
+更新する。
+$ python id2citygml.py D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ bldg D:
+\23207_toyokawa
+-
+shi_ 2022_citygml_1_spatialid
+\ udx
+\ bldg
+-- spatialid both
+$ python id2citygml.py D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ fld
+D:
+\23207_toyokawa
+-shi_2022_citygml_1_spatialid
+\ udx
+\ fld D:
+\23207_toyokawa
+-
+shi_2022_citygml_1_spatialid
+\ udx
+\ fld
+-- spatialid both
+3.2 空間
+I D のメタデータ
+生成ツール
+（ビューア部
+）
+(1)
+ 環境構築本ツールの動作要件は次のとおり。
+サーバの
+環境構築手順を
+表
+3 - 5 に示す。
+ サーバ
+ Windows / macOS / Linux
+ Python 3.9
+ クライアント（
+W eb ブラウザ）
+ Google Chrome
+ Microsoft Edge
+表
+ 3-5 サーバの環境構築手順（
+ビューア部
+）
+環境構築の手順
+コマンド
+Python
+仮想環境を作成し有効化
+す
+る（コマンド内の
+`.venv`
+は任意
+の名前に変更可能
+）
+macOS / Linux
+$ python3
+-m venv .venv
+$ source .venv/bin/activate
+Windows
+> python
+-m venv .venv
+> .venv
+\ Scripts
+\ Activate
+Python
+仮想環境に依存ライブラリ
+をインストール
+macOS / Linux
+$ pip install
+-r requirements.txt
+Windows
+> pip install
+-r requirements.txt
+3 座標変換に必要なファイルをダウンロード
+macOS / Linux
+$ pyproj sync
+-- file us_nga_egm96_15.tif
+Windows
+> pyproj sync
+-- file us_nga_egm96_15.tif
+開発環境で使用する場合、次
+の手順で開発サーバを起動する。
+表
+ 3-6 開発環境で使用する場合の手順
+環境構築の手順
+コマンド
+Python
+仮想環境を作成し有効化
+す
+る（コマンド内の
+`.venv`
+は任意
+の名前に変更可能
+）
+macOS / Linux
+$ python3
+-m venv .venv
+$ source .venv/bin/activate
+Windows
+> python
+-m venv .venv
+> .venv
+\ Scripts
+\ Activate
+2 開発サーバを起動
+$ flask
+-- app server run
+3 ビューア
+のトップページを開く
+→Web ブラウザで
+http://127.0.0.1:5000
+を開く
+運用環境では、
+Apache
+やNginx
+等の
+Web
+サーバと
+mod_wsgi
+やuwsgi
+等の
+WSGI
+準拠のミ
+ドルウェアを組み合わせてデプロイ
+する。
+(2)
+ ビューア
+の使用方法
+ビューア
+の基本操作を
+図
+3 - 4 に示す。
+図
+ 3-4 ビューア
+の基本操作
+[ 手順
+3]3D 都市モデル・ボ
+クセルの表示／非表示の切り替え
+[ 手順
+4] 選択したボクセルの
+メタデータ（属性）表示
+[ 手順
+2] 地物
+ID
+- 空間
+ID のペアリス
+ト（
+CSV ）を選択しアップロード
+[ 手順
+1] 3D
+都市モデル
+(3D Tiles/
+MVT) を選択しアップロード
+4  空間
+ID 付与のための
+3 D 都市モデル拡張製品仕様（案）
+4.1 空間
+ID の付与方法
+「
+3D都市モデル標準製品仕様書
+ 第
+2.3版」に準拠する
+3 D 都市モデルに「空間
+I D 」を付与する
+ために、
+表
+4 - 1に示す二つの方法を拡張仕様（案）として定義した。
+表
+ 4-1 空間
+IDの付与方法
+空間
+I D の付与方法
+説明
+C ityGML
+ファイル
+へ直接
+付与
+ C ityGML
+ファイル（
+データセット
+）内に記録される地物インスタンス
+（地
+物
+I D ）ごとに「空間
+ID 」を
+拡張
+属性に記録し提供
+ 「空間
+I D」を記録するための拡張属性を定義
+2 外部ファイル（
+C SV 形式）
+に付与
+ C ityGML ファイルの肥大化を避ける方法として、
+地物
+I D （gml:id
+）と「空
+間
+I D 」のペアリストを外部ファイルに記録し提供
+ C SV ファイルを使い「空間
+I D（ボクセル）」内に存在する地物の有無を
+判定することができる（
+C ityGML
+の解析は不要）
+ 「3 次元空間情報基盤」の共通機能として検討されている、領域横断的に使用される情報項目と整合（
+表
+4 - 2 参照）
+表
+ 4-2 「
+3次元空間情報基盤」の共通機能
+出典：
+3次元空間情報基盤アーキテクチャ設計報告書
+（表を引用）
+https://www.ipa.go.jp/dadc/architecture/pdf/pj_report_3dspatialinfo_doc_202208_1.pdf
+本技術
+検証レポートの「
+空間
+ID 付与
+のための自動生
+成ツール」
+の役割に該当する共通機能
+はNo.4
+入力
+データ
+は、「シェープファイル
+」ではなく
+「CityGML
+ファイル
+」
+「3次元空間情報基盤」を整備する事業者は、
+表
+4 - 1に示したいずれか（又は双方）のデータを使
+い、
+3 D 都市モデルのインポート機能を開発することができる。
+4.2 拡張製品仕様（案）の概要拡張製品仕様（案）には、「空間
+ID 」に加え、
+D ADC との協議結果を踏まえた属性項目を定義し
+た。拡張定義した属性項目を、
+表
+4 - 3 に示す。
+なお、拡張製品仕様（案）の詳細は、
+Project PLATEAU
+のGitHub
+に掲載
+する
+。
+ 空間
+ID 付与のための
+3 D 都市モデル拡張製品仕様書（案）
+：https ://github.com/Project
+-PLATEAU/PLATEAU
+-generator
+- for
+-spatialid/tree/main/specification
+表
+ 4-3 拡張定義した属性項目
+拡張定義した属性項目
+説明
+1 空間
+I D
+ 地物インスタンスが存在する空間ボクセルの識別子（空間
+I D ）を記録
+ 2次元の地物インスタンスについては、地理院タイル（
+X YZ タイル）の形式で
+I D を記録
+2 最大ズームレベル
+ 3 D 都市モデルのジオメトリから空間
+I D を生成する際に使用した基準ズーム
+レベル（最小のボクセルサイズ）を記録
+ この属性に記録するズームレベルを基準に、データ利用者側でより上位のズームレベルに空間ボクセルを統合することが可能
+ この属性に記録するズームレベルよりもさらに下位のズームレベル（より小さい空間ボクセル）へ分解した場合には、ジオメトリと空間
+ID の存在
+/ 占有
+関係の正しさを保証することはできない
+3 最適化処理の実施有
+無
+ 空間
+ID は階層構造を持つので、上位の空間
+ID を構成する
+8 つのボクセルが
+揃っている場合、
+空間
+ID を上位の空間
+ID へ統合（最適化）しデータサイズ
+を軽量化（空間
+I D のレコード数を減らす）することができる
+ 3 D 都市モデルのジオメトリから空間
+ID を生成した際に、最適化処理を実施
+した結果の空間
+I D が属性として記録されているかを表す（複数のズームレベ
+ルの空間
+I D が属性値に混在する場合がある）
+表
+4 - 3 の空間
+I D の最適化の考え方を、
+表
+4 - 4 及び
+図
+4 - 1 に示す。
+表
+ 4-4 拡張属性に記録する空間
+IDの最適化の考え方
+最適化の考え方
+説明
+メリット
+デメリット
+1 最適化無し
+(単一ズームレベルの空間
+I D に統一
+)
+ 基準とするズームレベル（空間ボクセルの大きさ）を決め、ジオメトリが占有する空間
+I D を記録
+ D B への登録、検索処理等
+を単純
+化
+ 空間
+I D のレコー
+ド数（データサイズ）が増大
+最適化の考え方
+説明
+メリット
+デメリット
+2 最適化有り
+(複数ズームレベルの空間
+I D を許容
+)
+ 基準とするズームレベルを決め、ジオメトリが占有する空間
+ID
+を
+抽出し、上位の空間
+I D を構成す
+る
+8 つの空間ボクセルが揃っている場合には、空間
+I D を上位階層
+に統合
+ 地物のジオメトリが占有する空
+間
+I D のレコード
+数を軽減
+ 用途に応じ空間ボクセルを分解できる
+ 検索処理等が複
+雑化
+(ズームレベル間の空間ボクセルの分解・統合処理等
+)
+図
+ 4-1 空間
+IDの最適化の考え方
+(1)
+ C ityGML
+ファイルの拡張仕様
+空間
+ID 付与のための拡張属性を、標準製品仕様書の
+「U rbanObject
+（
+i - UR ）」パッケージと
+「UrbanFunction
+（
+i - UR ）」に追加定義した。「
+Building
+（建築物）」の空間
+ID 付与のための拡張仕
+様（案）を、
+図
+4 - 2 に示す。同様
+の方法で
+、その他の地物にも拡張属性を定義した。
+図
+ 4-2
+Building（建築物）の空間
+ID付与のための拡張仕様（案）
+図
+4 - 2 の拡張仕様（案）に基づく建築物の
+C ityGML
+サンプルデータ例を
+図
+4 - 3 に示す。
+図
+ 4-3 空間
+IDを
+CityGMLファイルへ直接付与した例
+「Urban
+Object
+パッケージ
+の建築物
+のための
+拡
+張属性
+」に
+、「Building
+SpatialIDAttribute
+」ク
+ラス
+を定義し以下の属性を拡張定義
+。
+「ma
+x ZoomLevel
+」、「
+merge
+」及び
+「spatialID
+」の
+3 つの属性を定義
+<core:cityObjectMember><bldg:Building gml:id="bldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2">
+  <core:creationDate>2023
+- 03
+-22</core:creationDate>
+  <bldg:usage codeSpace="../../codelists/Building_usage.xml">411</bldg:usage>・・・
+  <uro:buildingSpatialIDAttribute>
+   <uro:BuildingSpatialIDAttribute>
+    <uro:maxZoomLevel>22</uro:maxZoomLevel>
+    <uro:merge>true</uro:merge>
+    <uro:spatialID>22/7/15
+99930/433631</uro: spatialID >
+    <uro: spatialID >22/6/1599929/433632</uro: spatialID >
+    <uro: spatialID >22/7/1599929/433632</uro: spatialID >
+    <uro: spatialID >22/6/1599930/433631</uro: spatialID >
+    <uro: spatialID >21/3/799964/216815</uro: sp
+atialID >
+   </uro:BuildingSpatialIDAttribute>
+  </uro:buildingSpatialIDAttribute></bldg:Building></core:cityObjectMember>
+空間
+ID を記録する
+ための拡張属性
+(2)
+ 外部ファイル（
+CSV
+形式）
+の仕様
+空間
+I D の外部ファイル化は、地物
+I D （g ml:id
+）と空間
+I D のペアリストの情報を
+C SV 形式で記録す
+る。
+C SV ファイルの単位は、
+GML ファイル（データセット）に対し、
+1 つの
+CSV ファイル内にペアリ
+ストの情報を列挙する。加えて、利用側での使いやすさを考慮し、
+CSV ファイルの先頭行に、ヘッダ
+情報として、
+表
+4 - 5 に示す情報を記録する。
+図
+4 - 4 に、
+C SV ファイルの例を示す。
+表
+ 4-5 外部ファイル（
+CSV形式）に記録する情報
+C SV ファイルに記録する情報
+説明
+1 ヘッダ情報
+ヘッダ識別コード
+ CSV ファイルの仕様を識別可能とし、また仕様変更が行われた際にも柔軟に対応できるよう、ヘッダ情報として記録
+ ヘッダ識別コード：
+PLATEAU_3D
+-Spatial
+-ID_CSV
+ バージョン番号：
+0 100 （メジャーバージョン
+2 桁＋マイナー
+バージョン
+2 桁）
+バージョン番号
+最大ズームレベル
+ 地物のジオメトリと空間
+ID の関係を保証することができる
+最小の空間ボクセルサイズに対応したズームレベルを記録
+最適化処理実施有無
+ 最適化処理の実施により、複数のズームレベルが混在する可能性があるか、
+0 or 1
+で記録
+5 ペアリストの列名
+gml_id
+ CityGML ファイルに記録される地物インスタンスの地物
+I D
+（g ml:id
+）を記録
+spatial_id
+ 地物インスタンスが存在
+/占有する「空間
+I D 」を記録
+図
+ 4-4
+CSVファイルに記録した空間
+IDの例
+「空間
+I D」を外部ファイルに記録し提供する際に、本体の
+C ityGML ファイルとの関連付けができるよ
+う、データ集合のクラスである
+core:
+CityModel
+に拡張属性を追加した。外部ファイル参照のための拡
+張仕様（案）を
+図
+4 - 5 に示す。
+C ityGML ファイルから外部ファイルを参照したサンプルデータ例を
+図
+4 - 6 に示す。
+PLATEAU_3D
+-Spatial
+-ID_CSV,0100,2
+2 ,1
+gml_id,spatial_idbldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2,22/7/1599930/433631
+bldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2,22/6/1599929/433632
+bldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2,22/7/1599929/433632
+bldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2,22/6/1599930/433631
+bldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2,21/3/799964/216815
+bldg_f070
+7e77
+- 9065
+- 4dd6
+- ac07
+-603846eea840,22/9/3697091/1663493
+bldg_f0707e77
+- 9065
+- 4dd6
+- ac07
+-603846eea840,22/10/3697091/1663493
+bldg_f0707e77
+- 9065
+- 4dd6
+- ac07
+-603846eea840,22/9/3697090/1663493
+・・・
+先頭
+行：
+ヘッダ
+情報
+2 行目
+：列名
+3 行目
+以降：
+地物
+ID と空
+間ID のペアリスト
+図
+ 4-5 データ集合に関連づける外部ファイル参照のための拡張属性（案）
+図
+ 4-6 CityGMLファイルから外部ファイルを参照する例
+<core:CityModel xmlns:bldg="http://www.opengis.net/citygml/building/2.0"
+・・・
+>
+<core:cityObjectMember>
+  <bldg:Building gml:id="bldg_b90c4f61
+- 79b3
+- 4cff
+- bcb7
+-226ab456c6c2">
+  ・・・
+   <uro:building
+SpatialIDAttribute>
+    <uro:BuildingSpatialIDAttribute>
+     <uro:maxZoomLevel>22</uro:maxZoomLevel>
+     <uro:merge>true</uro:merge>
+     <uro:spatialID
+>22/7/1599930/433631</uro:
+spatialID
+>
+<uro:
+spatialID
+>22/6/1599929/433632</uro:
+spatialID
+>
+<uro:
+spatialID
+>2 2/7/1599929/433632</uro:
+spatialID
+>
+<uro:
+spatialID
+>22/6/1599930/433631</uro:
+spatialID
+>
+<uro:
+spatialID
+>21/3/799964/216815</uro:
+spatialID
+>
+    </uro:Building
+SpatialIDAttribute>
+   </uro:building
+SpatialIDAttribute>
+  </bldg:Building>
+</cor e:cityObjectMember><core:cityObjectMember><uro:externalReferenceOfSpatialID>
+  <uro:fileLocation>spatialid/52372215_bldg_6697_zl22_merged.csv</uro:fileLocation></uro:externalReferenceOfSpatialID></core:CityModel>
+外部ファイル
+( CSV
+ファイル
+)の参照
+5  3 D 都市モデルから
+生成した
+空間
+ID の表示例
+(1)
+ 建築物
+3 D 都市モデルの
+建築物
+から生成した
+空間
+ID の表示例を
+図
+5 - 1 に示す。
+ 対象範囲：南相馬市
+ 3 次メッシュ番号：
+5 6403756
+図
+ 5-1 建築物の空間
+ID表示例
+オープンデータとして公開されている東京
+2 3 区の
+3 D 都市モデル（東京タワーを含む
+3 次メッシュ
+）から生成した
+空間
+I D の表示例
+を図
+5 - 2 に示す。
+3D 都市モデル
+ズームレベル
+ボクセルサイズ
+約8m
+ズームレベル
+2 3
+ボクセルサイズ
+約
+4 m
+ズームレベル
+2 0
+ボクセルサイズ
+約
+32 m
+ズームレベル
+2 1
+ボクセルサイズ
+約
+16 m
+ズームレベル
+ボクセルサイズ
+約
+64 m
+図
+ 5-2 東京タワー周辺に生成された
+空間
+ID
+ズームレベル
+2 3
+ボクセルサイズ
+約4m
+ズームレベル
+2 2
+ボクセルサイズ
+約
+8 m
+ズームレベル
+2 1
+ボクセルサイズ
+約
+16 m
+ズームレベル
+2 0
+ボクセルサイズ
+約
+32 m
+3D 都市
+モデル
+ズームレベル
+ボクセルサイズ約
+64m
+ズームレベル
+ボクセルサイズ約
+4m
+(2)
+ 都市設備
+3 D 都市モデルの
+都市設備
+から生成した
+空間
+ID の表示例
+を図
+5 - 3 と図
+5 - 4 に示す。
+ 対象範囲：豊川市
+ 3 次メッシュ番号：
+図
+ 5-3 都市設備の
+空間
+ID表示例
+（その
+1）
+ 対象範囲：南相馬市
+ 3 次メッシュ番号：
+図
+ 5-4 都市設備
+の空間
+ID表示例
+（その
+2）
+ズームレベル
+2 4
+ボクセルサイズ
+約2m
+最適化
+処理実施
+3D 都市
+モデル
+空間
+ID
+(ボクセル
+) を最適化した結
+果、複数のズームレベルのボクセルが混在する例
+ズームレベル
+ボクセルサイズ
+約32m
+ズームレベル
+ボクセルサイズ
+約
+2 m
+ズーム
+レベル
+24 では
+、地物
+の大まかな形
+がボクセ
+ルで表現される。ズーム
+レベル
+20 では
+、ある程度
+の広がりをもつ空
+間内の
+概況を把握することができる。
+(3)
+ 土地利用
+3 D 都市モデルの土地利用
+から生成した
+空間
+ID の表示例
+を図
+5 - 5 に示す。土地利用は
+2 次元のデー
+タである
+ため
+、2 次元の空間
+ID （X YZ タイル）
+が生成される。また、
+X YZ タイルを元に、
+3 次元の空間
+I D （Z FXY タイル）へ高さ方向の
+立ち上げを行った
+例も合わせて示す
+。
+ 対象範囲：豊川市
+ 2 次メッシュ番号：
+5 23723
+図
+ 5-5 土地利用の
+空間
+ID変換例
+図
+5 - 5 は、ズームレベル
+2 0 の
+Z FXY 形式の空間
+I D を、標高
+0 m から
+1 60m まで立ち上げた結果で
+ある。ズームレベル
+2 0 の鉛直方向の間隔は
+3 2m なので、
+{z}/{f}/{x}{y}
+の“
+f”は、“
+0 ”から“
+4 ”のボクセル
+が生成される。
+ズームレベル
+2 0
+ボクセルサイズ約
+32m
+3 次元の空間
+ID
+を立ち上げ
+(4)
+ 植生
+3 D 都市モデルの
+植生から生成した
+空間
+I D の表示例を
+図
+5 - 6 に示す。
+ 対象範囲：南相馬市
+ 3 次メッシュ番号：
+図
+ 5-6 植生（独立樹木と植被）の
+空間
+ID表示例
+ズームレベル
+2 4 （ボクセルサイズ
+2m ）の空間
+I D を生成すると
+、3 D 都市モデルの樹木の形状が再
+現されていることが確認できる。ズームレベル
+2 0（ボクセルサイズ
+3 2m ）の空間
+I D では
+、植生の大
+まかな分布
+を空間
+ID （ボクセル）ごとに
+表すことができる。
+ズームレベル
+2 4
+ボクセルサイズ約
+2m
+ズームレベル
+2 0
+ボクセルサイズ約
+32m
+3D 都市
+モデル
+(5)
+ 地形
+3 D 都市モデルの地形
+から生成した
+空間
+ID の表示例
+を図
+5 - 7 に示す。
+ 対象範囲：
+豊川市
+ 2 次メッシュ番号：
+5 23722
+図
+ 5-7 地形の空間
+ID表示例
+(6)
+ 土砂災害警戒区域
+3 D 都市モデルの土砂災害警戒区域から生成した
+空間
+I D の表示例を
+図
+5 - 8 に示す。
+土砂災害警戒区
+域は、
+2 次元のデータであるため、
+2 次元の空間
+I D （X YZ
+タイル）に変換される。
+ 対象範囲
+：豊川市
+ 2 次メッシュ番号：
+図
+ 5-8 土砂災害警戒区域の
+空間
+ID表示例
+ズームレベル
+ボクセルサイズ約
+32m
+ズームレベル
+ボクセルサイズ約
+32m
+(7)
+ 道路
+3 D 都市モデルの道路（
+LOD1
+）に空間
+I D を付与し、
+ビューア
+で表示した結果を
+図
+5 - 9 に示す。
+道路
+の
+L OD1
+は
+2 次元のデータであるため、
+2 次元の空間
+I D （X YZ タイル）に変換される。
+ 対象範囲：豊川市
+ 3 次メッシュ番号：
+5 2372215
+図
+ 5-9 道路（
+LOD1）の空間
+ID変換
+例
+(8)
+ 水部（浸水想定区域）
+3 D 都市モデ
+ルの水部から生成した
+空間
+I D の表示例
+を図
+5 - 10 に示す。
+ 対象範囲：豊川市
+ 3 次メッシュ番号：
+5 2372215
+図
+ 5-10 水部（浸水想定区域）の空間
+ID表示例
+ズームレベル
+ボクセルサイズ約
+32m
+ズームレベル
+2 3
+ボクセルサイズ約
+8m
+ズームレベル
+ボクセルサイズ約
+32m
+3D 都市
+モデル
+(9)
+ 都市計画決定情報
+3 D 都市モデルの都市計画決定情報
+から生成した
+空間
+ID の表示例を
+図
+5 - 11 に示す。都市計画決定情
+報は
+2 次元のデータであるため、
+2 次元の空間
+ID （X YZ タイル）
+が生成される。
+X YZ タイルを元に、
+次元の空間
+I D （Z FXY タイル）へ高さ方向の
+立ち上げを行った
+例も合わせて示す
+。
+ 対象範囲：豊川市
+ 3 次メッシュ番号：
+図
+ 5-11 都市計画決定情報の
+空間
+ID表示
+標高
+- 10m
+から
+200m
+の範囲を
+指定し、ボクセルを立ち上げ
+ズームレベル
+ボクセルサイズ約
+32m
+地表面よりも低い標高を指定したので地下部分にもボクセルが生成
+される⇒
+{z}/{f}/{x}{y}
+の“f” が
+” - 1” となっている
+PLATEAU
+のための空間
+ID 生成ツール
+技術検証レポート
+令和
+5 年
+3 月発行
+委託者：デジタル庁受託者：株式会社パスコ・国際航業株式会社・中日本航空株式会社共同事業体
