@@ -9,8 +9,9 @@ during a sabbatical at TU Delft.
 
 ```
 TUDelft/
-├── research/        # Research notes (Markdown)
 ├── memos/           # Memos (Markdown)
+├── presentationPDF/           # PDF files
+├── research-data/        # Research data/notes (Markdown)
 ├── templates/       # Templates for notes and memos
 │   ├── research_note.md
 │   └── memo.md
